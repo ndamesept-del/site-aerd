@@ -8,6 +8,10 @@
    Police Inter, libre de droits, fournie DANS le projet
    (public/fonts/, @font-face ci-dessous) : aucune police ne vient
    d'un serveur extérieur, le site reste autonome hors ligne.
+   Modèle de design : Commún (commundenver.org), association
+   communautaire — énorme titre-phrase, étiquette en petites
+   capitales, mission en gros caractères, programmes en cartes,
+   les personnes mises en avant avec photo, nom et rôle.
    ============================================================ */
 
 @font-face {
@@ -35,18 +39,19 @@
   --bleu-clair: #e3ecf8;
   --bleu-tres-clair: #eef3fb;
   --or: #c9a227;
-  --or-fonce: #a8871f;
+  --or-fonce: #7a6410;
   --or-clair: #f8f0cd;
   --or-bordure: #e3d199;
   --fond: #f8f7f2;
   --blanc: #ffffff;
-  --texte: #1d2733;
-  --texte-doux: #4d5866;
+  --texte: #152030;
+  --texte-doux: #3d4a5a;
   --bordure: #e7e2d2;
   --bordure-champ: #b9b29a;
   --vert: #14532d;
   --vert-fond: #e6f4ec;
-  --rouge: #7a1f16;
+  --rouge: #b42318;
+  --rouge-fonce: #8f1d10;
   --rouge-fond: #fdecea;
   --alerte-fond: #fff7d6;
   --alerte-texte: #5c4a00;
@@ -65,8 +70,8 @@ html {
 body {
   margin: 0;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  font-size: 17px;
-  line-height: 1.65;
+  font-size: 18px;
+  line-height: 1.7;
   color: var(--texte);
   background: var(--fond);
 }
@@ -97,12 +102,12 @@ h3 {
 }
 
 h1 {
-  font-size: 38px;
+  font-size: 44px;
 }
 
 /* Chaque titre de section porte une barre or bien visible. */
 h2 {
-  font-size: 28px;
+  font-size: 32px;
 }
 
 h2::after {
@@ -116,7 +121,27 @@ h2::after {
 }
 
 h3 {
-  font-size: 22px;
+  font-size: 24px;
+}
+
+/* Étiquette en petites capitales au-dessus d'un titre, comme
+   « OUR MISSION » sur le site modèle (Commún). */
+.sur-titre {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--or-fonce);
+  margin: 0 0 14px;
+}
+
+/* Mot souligné en or dans le grand titre, comme le mot « Community »
+   souligné en jaune sur le site modèle (Commún). */
+.souligne-or {
+  text-decoration: underline;
+  text-decoration-color: var(--or);
+  text-decoration-thickness: 6px;
+  text-underline-offset: 8px;
 }
 
 p {
@@ -178,7 +203,7 @@ p {
 
 .marque .sous-titre {
   display: block;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--texte-doux);
   line-height: 1.35;
@@ -197,7 +222,7 @@ p {
   min-width: 0;
   min-height: 48px;
   padding: 10px 6px;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   font-family: inherit;
   color: var(--bleu);
@@ -206,6 +231,7 @@ p {
   border-radius: 999px;
   cursor: pointer;
   white-space: nowrap;
+  transition: background-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
 
 .entete nav button:hover {
@@ -225,7 +251,7 @@ p {
   color: var(--alerte-texte);
   border-bottom: 1px solid var(--or-bordure);
   padding: 10px 0;
-  font-size: 15px;
+  font-size: 16px;
 }
 
 /* ---------- Boutons ---------- */
@@ -234,9 +260,9 @@ p {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 52px;
-  padding: 13px 24px;
-  font-size: 17px;
+  min-height: 56px;
+  padding: 14px 26px;
+  font-size: 18px;
   font-weight: 800;
   font-family: inherit;
   line-height: 1.3;
@@ -247,11 +273,19 @@ p {
   border-radius: 14px;
   box-shadow: 0 8px 20px rgba(18, 58, 110, 0.25);
   cursor: pointer;
+  transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease,
+    transform 0.18s ease;
 }
 
 .bouton:hover {
   background: var(--bleu-fonce);
   border-color: var(--bleu-fonce);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(18, 58, 110, 0.32);
+}
+
+.bouton:active {
+  transform: translateY(1px);
 }
 
 .bouton:disabled {
@@ -283,9 +317,9 @@ p {
 }
 
 .bouton-discret {
-  min-height: 48px;
-  padding: 10px 16px;
-  font-size: 16px;
+  min-height: 52px;
+  padding: 12px 18px;
+  font-size: 17px;
   font-weight: 700;
   font-family: inherit;
   color: var(--bleu);
@@ -294,10 +328,12 @@ p {
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(13, 42, 82, 0.06);
   cursor: pointer;
+  transition: background-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
 
 .bouton-discret:hover {
   background: var(--bleu-clair);
+  transform: translateY(-1px);
 }
 
 .bouton-discret:disabled {
@@ -332,10 +368,10 @@ p {
 }
 
 .hero .chapeau {
-  font-size: 19px;
+  font-size: 21px;
   font-weight: 500;
   color: #33404f;
-  max-width: 660px;
+  max-width: 680px;
 }
 
 .regle-or {
@@ -360,7 +396,7 @@ p {
 
 .faits {
   margin-top: 26px;
-  font-size: 16px;
+  font-size: 18px;
   color: var(--texte-doux);
 }
 
@@ -381,9 +417,9 @@ p {
 }
 
 .section .intro {
-  font-size: 17px;
+  font-size: 19px;
   color: var(--texte-doux);
-  max-width: 680px;
+  max-width: 700px;
 }
 
 .liste-simple {
@@ -429,7 +465,14 @@ p {
   border-left: 5px solid var(--or);
   border-radius: 16px;
   box-shadow: var(--ombre);
-  padding: 16px 18px;
+  padding: 18px 20px;
+  font-size: 18px;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.filieres li:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--ombre-forte);
 }
 
 .filieres strong {
@@ -438,7 +481,7 @@ p {
 
 .niveaux {
   margin-top: 22px;
-  font-size: 18px;
+  font-size: 19px;
 }
 
 .niveaux strong {
@@ -452,8 +495,14 @@ p {
   border: 1px solid var(--bordure);
   border-radius: 18px;
   box-shadow: var(--ombre);
-  padding: 22px;
+  padding: 24px;
   margin-bottom: 18px;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.carte:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--ombre-forte);
 }
 
 .carte-caravane {
@@ -466,12 +515,22 @@ p {
 
 .carte-caravane .date {
   color: var(--texte-doux);
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
+}
+
+/* Le montant de la place, bien visible. */
+.montant {
+  font-size: 23px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--bleu-fonce);
+  margin: 6px 0;
 }
 
 .ligne {
   margin: 8px 0;
+  font-size: 18px;
 }
 
 .ligne .etiquette {
@@ -484,7 +543,7 @@ p {
   flex-wrap: wrap;
   gap: 8px;
   margin: 14px 0 6px;
-  font-size: 16px;
+  font-size: 17px;
   color: var(--texte-doux);
 }
 
@@ -497,7 +556,29 @@ p {
 
 .compteurs strong {
   color: var(--bleu-fonce);
+  font-size: 19px;
+}
+
+/* Liste publique des inscrits d'une caravane : prénom, nom et
+   statut de paiement seulement, jamais de numéro de téléphone. */
+.liste-inscrits {
+  margin: 6px 0;
+}
+
+.rangee-inscrit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 4px;
+  border-bottom: 1px solid var(--bordure);
   font-size: 18px;
+  font-weight: 600;
+  color: var(--texte);
+}
+
+.rangee-inscrit:last-child {
+  border-bottom: none;
 }
 
 .encart-wave {
@@ -510,7 +591,7 @@ p {
 }
 
 .encart-wave .numero {
-  font-size: 23px;
+  font-size: 26px;
   font-weight: 800;
   letter-spacing: -0.01em;
   color: var(--bleu-fonce);
@@ -522,34 +603,43 @@ p {
 }
 
 /* Bannière d'avertissement : l'information à ne pas rater,
-   en particulier la règle des 24 heures avant le départ. */
+   en particulier la règle des 24 heures avant le départ.
+   EN ROUGE, gras, qui saute aux yeux — l'or ne suffisait pas. */
 .banniere-avertissement {
-  background: var(--alerte-fond);
-  border: 2px solid var(--or);
-  border-left: 6px solid var(--or);
+  background: var(--rouge-fond);
+  border: 3px solid var(--rouge);
+  border-left: 8px solid var(--rouge);
   border-radius: 14px;
   box-shadow: var(--ombre);
-  padding: 16px 18px;
+  padding: 18px 20px;
   margin: 0 0 20px;
-  color: var(--alerte-texte);
-  font-size: 16px;
+  color: var(--rouge-fonce);
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.55;
 }
 
 .banniere-avertissement strong {
-  color: var(--bleu-fonce);
+  color: var(--rouge-fonce);
 }
 
-/* Bannière rouge : les désistements sont déjà fermés. */
+/* Bannière rouge : les désistements sont déjà fermés.
+   Fond rouge, texte blanc : impossible à rater. */
 .banniere-ferme {
-  background: var(--rouge-fond);
-  border: 2px solid #e0a49e;
-  border-left: 6px solid var(--rouge);
+  background: var(--rouge);
+  border: 3px solid var(--rouge-fonce);
   border-radius: 14px;
   box-shadow: var(--ombre);
-  padding: 16px 18px;
+  padding: 18px 20px;
   margin: 14px 0;
-  color: var(--rouge);
-  font-size: 16px;
+  color: #fff;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+.banniere-ferme strong {
+  color: #fff;
 }
 
 .vide {
@@ -560,6 +650,7 @@ p {
   box-shadow: var(--ombre);
   padding: 26px 18px;
   text-align: center;
+  font-size: 18px;
 }
 
 .rangee {
@@ -567,20 +658,26 @@ p {
   border: 1px solid var(--bordure);
   border-radius: 16px;
   box-shadow: var(--ombre);
-  padding: 18px 20px;
+  padding: 20px 22px;
   margin-bottom: 12px;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.rangee:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--ombre-forte);
 }
 
 .rangee .nom {
   font-weight: 800;
   letter-spacing: -0.01em;
-  font-size: 19px;
+  font-size: 20px;
   color: var(--bleu-fonce);
 }
 
 .rangee .details {
   color: var(--texte-doux);
-  font-size: 16px;
+  font-size: 17px;
   margin-top: 3px;
 }
 
@@ -595,7 +692,7 @@ p {
   display: inline-block;
   padding: 4px 12px;
   border-radius: 999px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -642,7 +739,7 @@ p {
 .champ label {
   display: block;
   font-weight: 700;
-  font-size: 16px;
+  font-size: 17px;
   margin-bottom: 6px;
 }
 
@@ -650,10 +747,10 @@ p {
 .champ select,
 .champ textarea {
   width: 100%;
-  min-height: 52px;
-  font-size: 17px;
+  min-height: 56px;
+  font-size: 18px;
   font-family: inherit;
-  padding: 13px 14px;
+  padding: 14px 16px;
   border: 1px solid var(--bordure-champ);
   border-radius: 12px;
   background: var(--blanc);
@@ -668,9 +765,24 @@ p {
 }
 
 .champ .aide {
-  font-size: 14.5px;
+  font-size: 16px;
   color: var(--texte-doux);
   margin-top: 5px;
+}
+
+/* Champ piège anti-spam (honeypot) : invisible pour une vraie
+   personne (hors écran, jamais atteint au clavier), mais présent
+   dans le formulaire. Un robot qui le remplit est refusé par le
+   serveur. Ne jamais utiliser display: none ici : certains robots
+   ignorent les champs cachés de cette façon. */
+.champ-piege {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
 }
 
 .grille-champs {
@@ -679,7 +791,56 @@ p {
   gap: 0;
 }
 
+/* ---------- Anciens membres du bureau ---------- */
+
+/* Nom et poste seulement, sans photo. Le séparateur en haut de la
+   section la distingue de la liste du bureau actuel. */
+.section-anciens {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--bordure);
+}
+
+.section-anciens h3 {
+  margin-top: 0;
+}
+
+.section-anciens .liste-simple {
+  margin-top: 8px;
+}
+
+.section-anciens .liste-simple li {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--bordure);
+}
+
+.section-anciens .liste-simple li:last-child {
+  border-bottom: 0;
+}
+
 /* ---------- Pop-ups (modales) ---------- */
+
+/* Ouverture animée : le fond s'assombrit en fondu, la fenêtre
+   monte doucement (téléphone) ou apparaît en fondu (ordinateur). */
+@keyframes modale-fondu {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modale-monter {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 .modale-fond {
   position: fixed;
@@ -689,6 +850,7 @@ p {
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  animation: modale-fondu 0.2s ease-out;
 }
 
 .modale {
@@ -699,6 +861,7 @@ p {
   border-radius: 22px 22px 0 0;
   box-shadow: var(--ombre-forte);
   padding: 20px 20px 28px;
+  animation: modale-monter 0.25s ease-out;
 }
 
 .modale-entete {
@@ -711,14 +874,14 @@ p {
 
 .modale-entete h3 {
   margin: 0;
-  font-size: 24px;
+  font-size: 26px;
 }
 
 .modale-fermer {
   flex: 0 0 auto;
-  width: 44px;
-  height: 44px;
-  font-size: 28px;
+  width: 48px;
+  height: 48px;
+  font-size: 30px;
   line-height: 1;
   font-family: inherit;
   color: var(--bleu-fonce);
@@ -727,10 +890,12 @@ p {
   border-radius: 999px;
   box-shadow: 0 2px 8px rgba(13, 42, 82, 0.08);
   cursor: pointer;
+  transition: background-color 0.18s ease, transform 0.18s ease;
 }
 
 .modale-fermer:hover {
   background: var(--bleu-clair);
+  transform: scale(1.06);
 }
 
 /* Dans une pop-up, le formulaire n'a plus besoin de son propre cadre. */
@@ -751,32 +916,38 @@ p {
   background: var(--vert-fond);
   border: 1px solid #9fd0b2;
   color: var(--vert);
-  padding: 13px 15px;
+  padding: 14px 16px;
   border-radius: 12px;
   margin: 14px 0;
+  font-size: 18px;
+  font-weight: 600;
 }
 
 .message-erreur {
   background: var(--rouge-fond);
-  border: 1px solid #f0b6b0;
-  color: var(--rouge);
-  padding: 13px 15px;
+  border: 2px solid var(--rouge);
+  color: var(--rouge-fonce);
+  padding: 14px 16px;
   border-radius: 12px;
   margin: 14px 0;
+  font-size: 18px;
+  font-weight: 700;
 }
 
 .message-info {
   background: var(--bleu-clair);
   border: 1px solid #b7cbe6;
   color: var(--bleu-fonce);
-  padding: 13px 15px;
+  padding: 14px 16px;
   border-radius: 12px;
   margin: 14px 0;
+  font-size: 18px;
 }
 
 .chargement {
   color: var(--texte-doux);
   padding: 24px 0;
+  font-size: 18px;
 }
 
 /* ---------- Bureau ---------- */
@@ -795,9 +966,9 @@ p {
 
 .onglets-bureau button {
   flex: 0 0 auto;
-  min-height: 48px;
-  padding: 10px 18px;
-  font-size: 16px;
+  min-height: 52px;
+  padding: 12px 20px;
+  font-size: 17px;
   font-weight: 700;
   font-family: inherit;
   white-space: nowrap;
@@ -807,10 +978,12 @@ p {
   border-radius: 999px;
   box-shadow: 0 2px 8px rgba(13, 42, 82, 0.06);
   cursor: pointer;
+  transition: background-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
 
 .onglets-bureau button:hover {
   background: var(--bleu-clair);
+  transform: translateY(-1px);
 }
 
 .onglets-bureau button.actif {
@@ -847,7 +1020,7 @@ p {
 
 .stat .libelle {
   color: var(--texte-doux);
-  font-size: 16px;
+  font-size: 17px;
 }
 
 .carte-connexion {
@@ -861,13 +1034,128 @@ p {
 
 .recherche input {
   width: 100%;
-  min-height: 52px;
-  font-size: 17px;
+  min-height: 56px;
+  font-size: 18px;
   font-family: inherit;
-  padding: 13px 14px;
+  padding: 14px 16px;
   border: 1px solid var(--bordure-champ);
   border-radius: 14px;
   box-shadow: var(--ombre);
+}
+
+/* ---------- Organigramme du bureau ---------- */
+
+/* Grille des personnes du bureau, comme les témoignages avec photo
+   du site modèle (Commún) : photo, nom, rôle. */
+.grille-bureau {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.carte-bureau {
+  background: var(--blanc);
+  border: 1px solid var(--bordure);
+  border-top: 6px solid var(--or);
+  border-radius: 20px;
+  box-shadow: var(--ombre);
+  padding: 28px 22px;
+  text-align: center;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.carte-bureau:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--ombre-forte);
+}
+
+.carte-bureau h3 {
+  font-size: 23px;
+  margin: 14px 0 4px;
+}
+
+.poste-bureau {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--bleu);
+  margin: 0;
+}
+
+/* Photo ronde d'un membre du bureau (104 px), ou ses initiales
+   dans un cercle bleu quand il n'a pas encore mis de photo. */
+.photo-bureau {
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--or);
+  background: var(--blanc);
+}
+
+.initiales-bureau {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  background: var(--bleu);
+  color: #fff;
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  border: 3px solid var(--or);
+  flex: 0 0 auto;
+}
+
+/* Dans le bureau, chaque ligne montre la photo à gauche,
+   le nom et le poste au milieu, les boutons à droite. */
+.rangee-bureau {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+
+.rangee-bureau .photo-bureau,
+.rangee-bureau .initiales-bureau {
+  width: 72px;
+  height: 72px;
+  font-size: 26px;
+}
+
+.rangee-bureau-texte {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+/* Choix de la photo dans le formulaire de l'organigramme. */
+.champ-photo {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.champ-photo .photo-bureau,
+.champ-photo .initiales-bureau {
+  width: 104px;
+  height: 104px;
+  font-size: 36px;
+}
+
+.bouton-photo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 12px 18px;
+  font-size: 17px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  margin: 0 8px 8px 0;
 }
 
 .barre-bureau {
@@ -899,7 +1187,7 @@ p {
 }
 
 .pied p {
-  font-size: 16px;
+  font-size: 17px;
   margin-bottom: 8px;
 }
 
@@ -907,15 +1195,28 @@ p {
   color: #ffd970;
 }
 
+.pied-liens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  margin-top: 14px;
+}
+
+.pied-cookies {
+  margin-top: 14px;
+  font-size: 16px;
+  color: #b9c9e2;
+}
+
 /* ---------- Tablette et ordinateur ---------- */
 
 @media (min-width: 720px) {
   h1 {
-    font-size: 52px;
+    font-size: 60px;
   }
 
   h2 {
-    font-size: 34px;
+    font-size: 40px;
   }
 
   .entete nav {
@@ -926,7 +1227,7 @@ p {
   .entete nav button {
     flex: 0 0 auto;
     padding: 10px 18px;
-    font-size: 16px;
+    font-size: 17px;
   }
 
   .actions {
@@ -938,6 +1239,10 @@ p {
   }
 
   .filieres {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .grille-bureau {
     grid-template-columns: 1fr 1fr;
   }
 
@@ -981,5 +1286,9 @@ p {
 @media (min-width: 1024px) {
   .conteneur {
     padding: 0 24px;
+  }
+
+  .grille-bureau {
+    grid-template-columns: 1fr 1fr 1fr;
   }
 }

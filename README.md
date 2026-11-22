@@ -5,10 +5,16 @@ Site de l’**Amicale des Étudiants Ressortissants de Diourbel (AERD/UAM)**,
 
 Le site permet de :
 - présenter l’amicale aux nouveaux bacheliers de Diourbel et de Bambey ;
-- montrer les caravanes à venir, avec le chauffeur et le numéro Wave du responsable ;
+- montrer le bureau de l’amicale (photo, nom et poste de chacun) sur la page d’accueil ;
+- montrer les caravanes à venir, avec le chauffeur, le montant de la place,
+  le numéro Wave ou Orange Money du responsable, et un bouton
+  « Liste des inscrits (X) » qui ouvre une pop-up avec le prénom, le nom et
+  le statut de chaque inscrit (« Payé » ou « En attente ») — jamais de numéro
+  de téléphone, les numéros restent privés ;
 - laisser chaque membre **s’inscrire tout seul à une caravane** (et se désister si besoin) ;
-- gérer, dans l’espace bureau : les membres, l’annuaire des chauffeurs, les caravanes
-  et les paiements (cocher « Payé » après vérification).
+- gérer, dans l’espace bureau : les membres, l’annuaire des chauffeurs, les caravanes,
+  les paiements (cocher « Payé » après vérification) et l’organigramme du bureau
+  (chacun met sa propre photo, enregistrée dans la base).
 
 Technologies : Vite + React (le site), Netlify Functions (le serveur),
 PostgreSQL (la base de données, Netlify DB / Neon). Le site s’adapte au téléphone
@@ -59,11 +65,34 @@ npx netlify dev
 **Le plus simple et le plus sûr : créer la base directement sur Neon** (https://neon.com), le service qui fournit le PostgreSQL de Netlify. Le compte gratuit est **permanent, sans limite de temps et sans carte bancaire** : 1 Go de stockage (largement assez pour les membres et les caravanes de l'amicale) et 100 heures de calcul par mois. Quand personne n'utilise le site pendant 5 minutes, la base se met en pause toute seule, et elle se réveille en moins d'une seconde à la première visite. **Les données ne sont jamais supprimées** : même si une limite est atteinte, la base se met juste en pause jusqu'au mois suivant.
 
 1. Crée un compte gratuit sur https://neon.com (avec ton adresse e-mail, pas besoin de carte bancaire).
-2. Crée un projet (par exemple « aerd »). Neon te donne une adresse de connexion (elle commence par `postgresql://...`). C'est ton `DATABASE_URL`.
+2. Crée un projet (par exemple « aerd »). Neon te donne une adresse de connexion : c'est ton `DATABASE_URL`.
 3. Ouvre l'onglet « SQL Editor » de ton projet Neon et colle tout le contenu du fichier `schema.sql`
    (à la racine du projet). Cela crée les tables : `membres`, `chauffeurs`,
-   `caravanes`, `inscriptions`.
+   `caravanes`, `inscriptions`, `bureau`.
 4. Dans Netlify (Site settings → Environment variables), ajoute `DATABASE_URL` avec l'adresse copiée à l'étape 2.
+
+**Si ta base existe déjà (tables créées avant)** : colle seulement ces requêtes
+dans l'éditeur SQL de Neon, pour ajouter ce qui manque :
+
+```sql
+ALTER TABLE caravanes ADD COLUMN IF NOT EXISTS montant_fcfa INTEGER;
+
+CREATE TABLE IF NOT EXISTS bureau (
+  id SERIAL PRIMARY KEY,
+  prenom TEXT NOT NULL,
+  nom TEXT NOT NULL,
+  poste TEXT NOT NULL,
+  photo TEXT,
+  ordre INTEGER NOT NULL DEFAULT 0,
+  exemple BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO bureau (prenom, nom, poste, ordre) VALUES ('Mame Cheikh', 'Niang', 'Président', 1);
+```
+
+La dernière ligne ajoute le président actuel à l'organigramme (sans photo pour
+l'instant : il l'ajoutera lui-même dans l'espace bureau, onglet « Organigramme »).
 
 Pourquoi pas la base d'essai de Netlify ? L'ancienne « Netlify DB » en version d'essai ne dure que 7 jours : si on ne la relie pas à un compte Neon dans les 7 jours, elle est supprimée. En créant la base directement sur Neon, il n'y a pas du tout cette limite de 7 jours.
 
@@ -138,25 +167,27 @@ site-aerd/
   package.json            Dépendances (React, Vite, pg)
   vite.config.js          Configuration Vite
   netlify.toml            Configuration Netlify (build, dossier des fonctions)
-  schema.sql              Tables PostgreSQL (membres, chauffeurs, caravanes, inscriptions)
+  schema.sql              Tables PostgreSQL (membres, chauffeurs, caravanes, inscriptions, bureau)
   .env.example            Modèle des variables d'environnement (à copier en .env)
   public/
     Logo_AERD_UAM.png     Logo de l'amicale (utilisé dans l'en-tête)
+    fonts/                Police Inter, fournie dans le projet (aucun CDN)
   src/
     main.jsx              Point d'entrée React
     App.jsx               En-tête, navigation, pied de page
     api.js                Appels aux Netlify Functions (avec repli local en dev)
     localMock.js          Base locale du navigateur (mode local seulement)
-    data.js               Filières, niveaux, lien du formulaire d'inscription
+    data.js               Filières, niveaux, postes du bureau, lien du formulaire d'inscription
     styles.css            Tout le design (bleu profond et or, mobile-first)
     pages/
-      Accueil.jsx         Page d'accueil publique
+      Accueil.jsx         Page d'accueil publique (dont la section « Le bureau »)
       CaravanesPubliques.jsx  Caravanes publiques, inscription, désistement
       Bureau.jsx          Connexion et onglets du bureau
       BureauDashboard.jsx Tableau de bord et données d'exemple
       BureauMembres.jsx   Recherche et ajout de membres
       BureauChauffeurs.jsx Annuaire des chauffeurs
       BureauCaravanes.jsx Création de caravanes, inscrits, paiements
+      BureauOrganigramme.jsx Organigramme : photo, nom et poste de chaque membre du bureau
   netlify/functions/
     db.js                 Connexion PostgreSQL et réponses JSON
     auth.js               Mot de passe du bureau et jeton de session
@@ -165,6 +196,7 @@ site-aerd/
     inscriptions.js       S'inscrire, se désister, marquer payé, retirer
     membres.js            Recherche et ajout de membres
     chauffeurs.js         Recherche et ajout de chauffeurs
+    bureau.js             Organigramme du bureau (lecture publique, écriture réservée au bureau)
     stats.js              Compteurs du tableau de bord
     exemples.js           Charger / supprimer les données d'exemple
 ```
@@ -182,6 +214,37 @@ site-aerd/
   ou dans l’espace bureau.
 - **Le mot de passe du bureau n’est jamais dans le code** : variable
   d’environnement `BUREAU_PASSWORD` seulement.
-- Les paiements se font par Wave, à la main : le membre paie sur le numéro Wave
-  du responsable, et le bureau coche « Payé » après vérification. Il n’y a pas
-  de paiement automatique sur le site (il faudrait un compte marchand).
+- Les paiements se font par Wave ou Orange Money, à la main : après son inscription,
+  le membre voit le montant de la place et le numéro du responsable, il paie,
+  et le bureau coche « Payé » après vérification. Il n’y a pas de paiement
+  automatique sur le site (il faudrait un compte marchand).
+- **Organigramme : chaque membre du bureau met lui-même sa photo** (depuis son
+  téléphone, dans l’espace bureau, onglet « Organigramme »). La photo est
+  enregistrée dans la base de données et s’affiche sur la page d’accueil,
+  avec son nom et son poste. Sans photo, le site affiche ses initiales
+  dans un cercle bleu.
+- **Anciens membres du bureau :** quand le bureau change, le bouton « Passer aux
+  anciens » (onglet « Organigramme ») garde le nom et le poste du membre, mais
+  **supprime sa photo pour libérer de l’espace** (une photo fait environ 30 à 60 Ko).
+  Les anciens s’affichent en bas de la page « Le bureau », nom et poste seulement,
+  sans photo. Si la base existe déjà, ajoute la colonne avec :
+  `ALTER TABLE bureau ADD COLUMN IF NOT EXISTS ancien BOOLEAN NOT NULL DEFAULT FALSE;`
+
+## Qualité du site (checklist du 22/11)
+
+- **Confidentialité et conditions :** pages « Confidentialité » et « Conditions d’utilisation »,
+  liées dans le pied de page. Le pied de page dit aussi que le site ne dépose aucun cookie de suivi.
+- **Pas de suivi :** aucun traqueur d’audience (ni Google Analytics, ni cookies). Le bureau voit
+  directement les inscriptions dans l’espace bureau.
+- **SEO :** titre et description en français, image d’aperçu Open Graph (le logo), favicon (le logo),
+  `sitemap.xml` et `robots.txt` dans `public/`.
+- **Page 404 :** une page « Page introuvable » dans l’application (toute adresse inconnue) et un
+  fichier `public/404.html` pour Netlify, avec un bouton « Retour à l’accueil ».
+- **Anti-spam :** le formulaire public d’inscription aux caravanes contient un champ piège invisible
+  (honeypot) : si un robot le remplit, le serveur refuse l’inscription. Le serveur refuse aussi
+  les inscriptions trop rapprochées (même numéro en moins de 60 secondes, 20 inscriptions par minute
+  au maximum). Pas de captcha, pas de service externe.
+- **Images :** le logo est compressé (512 px, environ 42 Ko). Les photos du bureau sont redimensionnées
+  dans le navigateur (400 px maximum, JPEG) avant d’être enregistrées.
+- **Clés secrètes :** `DATABASE_URL` et `BUREAU_PASSWORD` sont des variables d’environnement Netlify
+  seulement, jamais dans le code. Le HTTPS est forcé par Netlify par défaut.

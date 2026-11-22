@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS caravanes (
   destination TEXT NOT NULL,
   chauffeur_id INTEGER REFERENCES chauffeurs(id) ON DELETE SET NULL,
   numero_wave_responsable TEXT NOT NULL,
+  montant_fcfa INTEGER,
   exemple BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -56,7 +57,52 @@ CREATE TABLE IF NOT EXISTS caravanes (
 -- Si la table existe déjà sans cette colonne, ajoute-la avec :
 --   ALTER TABLE caravanes ADD COLUMN IF NOT EXISTS heure_depart TIME NOT NULL DEFAULT '08:00';
 
+-- Montant de la place (en FCFA) : ce que chaque membre paie pour la caravane.
+-- Si la table existe déjà sans cette colonne, ajoute-la avec :
+--   ALTER TABLE caravanes ADD COLUMN IF NOT EXISTS montant_fcfa INTEGER;
+
 CREATE INDEX IF NOT EXISTS caravanes_date_idx ON caravanes (date_depart);
+
+-- Organigramme du bureau de l'amicale : qui occupe quel poste.
+-- La photo est une petite image (400 px maximum) enregistrée directement
+-- dans la base, en data URI (texte). Si la photo est vide, le site
+-- affiche les initiales de la personne dans un cercle bleu.
+-- « ordre » sert à ranger les membres : le président en premier (1),
+-- puis les autres dans l'ordre choisi par le bureau.
+CREATE TABLE IF NOT EXISTS bureau (
+  id SERIAL PRIMARY KEY,
+  prenom TEXT NOT NULL,
+  nom TEXT NOT NULL,
+  poste TEXT NOT NULL,
+  photo TEXT,
+  ordre INTEGER NOT NULL DEFAULT 0,
+  ancien BOOLEAN NOT NULL DEFAULT FALSE,
+  exemple BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS bureau_ordre_idx ON bureau (ordre, nom);
+
+-- Anciens membres du bureau : quand le bureau change, on garde le nom
+-- et le poste des anciens, mais on supprime leur photo pour libérer
+-- de l'espace (une photo fait environ 30 à 60 Ko). Si la table existe
+-- déjà sans cette colonne, ajoute-la avec :
+--   ALTER TABLE bureau ADD COLUMN IF NOT EXISTS ancien BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- Si la table bureau n'existe pas encore dans ta base, crée-la et
+-- ajoute le président actuel avec ces deux requêtes :
+--   CREATE TABLE bureau (
+--     id SERIAL PRIMARY KEY,
+--     prenom TEXT NOT NULL,
+--     nom TEXT NOT NULL,
+--     poste TEXT NOT NULL,
+--     photo TEXT,
+--     ordre INTEGER NOT NULL DEFAULT 0,
+--     ancien BOOLEAN NOT NULL DEFAULT FALSE,
+--     exemple BOOLEAN NOT NULL DEFAULT FALSE,
+--     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+--   );
+--   INSERT INTO bureau (prenom, nom, poste, ordre) VALUES ('Mame Cheikh', 'Niang', 'Président', 1);
 
 CREATE TABLE IF NOT EXISTS inscriptions (
   id SERIAL PRIMARY KEY,

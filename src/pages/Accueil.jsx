@@ -1,10 +1,17 @@
 import { useEffect, useState } from 'react'
-import { FILIERES, NIVEAUX, FORMULAIRE_INSCRIPTION, formatDate } from '../data.js'
+import { FILIERES, NIVEAUX, FORMULAIRE_INSCRIPTION, formatDate, formatMontant } from '../data.js'
 import { api } from '../api.js'
+
+function initiales(prenom, nom) {
+  const lettres = (String(prenom || '').trim().charAt(0) + String(nom || '').trim().charAt(0)).toUpperCase()
+  return lettres || '?'
+}
 
 export default function Accueil({ aller }) {
   const [prochaine, setProchaine] = useState(null)
   const [charge, setCharge] = useState(true)
+  const [bureau, setBureau] = useState([])
+  const [anciens, setAnciens] = useState([])
 
   useEffect(() => {
     api
@@ -14,14 +21,26 @@ export default function Accueil({ aller }) {
       })
       .catch(() => setProchaine(null))
       .finally(() => setCharge(false))
+    api
+      .bureauPublic()
+      .then((data) => {
+        setBureau(data.bureau || [])
+        setAnciens(data.anciens || [])
+      })
+      .catch(() => {
+        setBureau([])
+        setAnciens([])
+      })
   }, [])
 
   return (
     <div>
       <section className="hero">
         <div className="conteneur">
-          <hr className="regle-or" />
-          <h1>Les étudiants de Diourbel et de Bambey, réunis à l’UAM.</h1>
+          <p className="sur-titre">Bienvenue à l’AERD / UAM</p>
+          <h1>
+            Les étudiants de <span className="souligne-or">Diourbel et de Bambey</span>, réunis à l’UAM.
+          </h1>
           <p className="chapeau">
             L’amicale accueille les nouveaux bacheliers de Diourbel et de Bambey à l’Université Amadou Mahtar Mbow,
             à Diamniadio. On vous aide à trouver vos repères sur le campus, et on organise ensemble les caravanes
@@ -32,7 +51,7 @@ export default function Accueil({ aller }) {
               Voir les prochaines caravanes
             </button>
             <a className="bouton bouton-secondaire" href={FORMULAIRE_INSCRIPTION} target="_blank" rel="noreferrer">
-              Devenir membre de l’amicale
+              Rejoindre l’amicale
             </a>
           </div>
           <p className="faits">
@@ -79,6 +98,9 @@ export default function Accueil({ aller }) {
             <div className="carte carte-caravane">
               <h3>{prochaine.destination}</h3>
               <p className="date">{formatDate(prochaine.date_depart)}</p>
+              {prochaine.montant_fcfa != null && (
+                <p className="montant">{formatMontant(prochaine.montant_fcfa)} par place</p>
+              )}
               {prochaine.chauffeur && (
                 <p className="ligne">
                   <span className="etiquette">Chauffeur :</span> {prochaine.chauffeur.prenom} {prochaine.chauffeur.nom}{' '}
@@ -103,6 +125,59 @@ export default function Accueil({ aller }) {
           )}
         </div>
       </section>
+
+      {(bureau.length > 0 || anciens.length > 0) && (
+        <section className="section">
+          <div className="conteneur">
+            <p className="sur-titre">Les responsables</p>
+            <h2>Le bureau de l’amicale</h2>
+            {bureau.length > 0 && (
+              <>
+                <p className="intro">
+                  Ce sont eux qui font vivre l’amicale : ils accueillent les nouveaux, organisent les
+                  caravanes et répondent à tes questions.
+                </p>
+                <div className="grille-bureau">
+                  {bureau.map((m) => (
+                    <article className="carte-bureau" key={m.id}>
+                      {m.photo ? (
+                        <img className="photo-bureau" src={m.photo} alt={'Photo de ' + m.prenom + ' ' + m.nom} />
+                      ) : (
+                        <span className="initiales-bureau" aria-hidden="true">
+                          {initiales(m.prenom, m.nom)}
+                        </span>
+                      )}
+                      <h3>
+                        {m.prenom} {m.nom}
+                      </h3>
+                      <p className="poste-bureau">{m.poste}</p>
+                    </article>
+                  ))}
+                </div>
+              </>
+            )}
+            {anciens.length > 0 && (
+              <div className="section-anciens">
+                <h3>Anciens membres du bureau</h3>
+                <p className="intro">
+                  Ils ont dirigé l’amicale avant le bureau actuel. Leurs noms et leurs postes restent
+                  affichés ici, sans photo.
+                </p>
+                <ul className="liste-simple">
+                  {anciens.map((m) => (
+                    <li key={m.id}>
+                      <strong>
+                        {m.prenom} {m.nom}
+                      </strong>{' '}
+                      — {m.poste}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       <section className="section">
         <div className="conteneur">
@@ -133,7 +208,7 @@ export default function Accueil({ aller }) {
             et t’ajoute à la liste des membres. Tes informations restent dans l’amicale.
           </p>
           <a className="bouton bouton-bleu" href={FORMULAIRE_INSCRIPTION} target="_blank" rel="noreferrer">
-            Remplir le formulaire d’inscription
+            Rejoindre l’amicale
           </a>
         </div>
       </section>

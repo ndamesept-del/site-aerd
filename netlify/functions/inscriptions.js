@@ -10,6 +10,27 @@
 import { getPool, reponse, erreur, pasDeBase, lireCorps, nettoyerTexte } from './db.js'
 import { jetonValide, nonAutorise } from './auth.js'
 
+// Anti-spam simple (en mémoire de la fonction, première ligne de
+// défense) : une même personne ne peut pas s'inscrire deux fois
+// en moins de 60 secondes, et pas plus de 20 inscriptions par
+// minute au total. Les fonctions Netlify sont éphémères, donc
+// cette limite ne remplace pas la vérification du doublon en base.
+const dernieresParTelephone = new Map()
+const dernieresInscriptions = []
+
+function tropRapide(telephone) {
+  const maintenant = Date.now()
+  const derniere = dernieresParTelephone.get(telephone)
+  if (derniere && maintenant - derniere < 60 * 1000) return true
+  while (dernieresInscriptions.length > 0 && maintenant - dernieresInscriptions[0] > 60 * 1000) {
+    dernieresInscriptions.shift()
+  }
+  if (dernieresInscriptions.length >= 20) return true
+  dernieresParTelephone.set(telephone, maintenant)
+  dernieresInscriptions.push(maintenant)
+  return false
+}
+
 export async function handler(event) {
   if (event.httpMethod !== 'POST') return erreur('Méthode non autorisée.', 405)
   const pool = getPool()
@@ -18,6 +39,12 @@ export async function handler(event) {
 
   try {
     if (corps.action === 'inscrire') {
+      // Champ piège anti-spam (honeypot) : le formulaire public
+      // contient un champ invisible pour une vraie personne.
+      // Si un robot le remplit, on refuse l'inscription.
+      if (nettoyerTexte(corps.site_web)) {
+        return erreur('Une erreur est survenue.', 400)
+      }
       const caravane_id = Number(corps.caravane_id)
       const prenom = nettoyerTexte(corps.prenom)
       const nom = nettoyerTexte(corps.nom)
@@ -27,6 +54,9 @@ export async function handler(event) {
       }
       if (telephone.replace(/\D/g, '').length < 9) {
         return erreur('Le numéro de téléphone semble incomplet.', 400)
+      }
+      if (tropRapide(telephone)) {
+        return erreur('Trop de tentatives rapprochées. Attends une minute avant de réessayer.', 429)
       }
       const car = await pool.query('SELECT id FROM caravanes WHERE id = $1', [caravane_id])
       if (car.rows.length === 0) return erreur('Caravane introuvable.', 404)

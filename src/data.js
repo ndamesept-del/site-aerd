@@ -15,6 +15,25 @@ export const NIVEAUX = ['L1', 'L2', 'L3', 'M1', 'M2']
 
 export const ORIGINES = ['Diourbel', 'Bambey']
 
+// Postes du bureau de l'amicale, proposés dans le formulaire
+// de l'organigramme (le poste reste un texte libre).
+export const POSTES_BUREAU = [
+  'Président',
+  'Secrétaire général',
+  'Secrétaire général adjoint',
+  'Trésorier',
+  'Président de la commission pédagogique',
+  'Président de la commission sociale'
+]
+
+// Met en forme un montant en FCFA, ex : 7 500 FCFA
+export function formatMontant(montant) {
+  if (montant == null || montant === '') return ''
+  const n = Number(montant)
+  if (!Number.isFinite(n)) return ''
+  return n.toLocaleString('fr-FR') + ' FCFA'
+}
+
 // Formulaire Google Forms de l'amicale (inscription des membres).
 // Le bureau ajoute ensuite les membres dans l'espace bureau.
 export const FORMULAIRE_INSCRIPTION =

@@ -90,6 +90,12 @@ export const api = {
   ajouterMembre: (donnees) => appel('membres', { methode: 'POST', corps: donnees, auth: true }),
   chauffeurs: (q = '') => appel('chauffeurs', { auth: true, params: q ? { q } : null }),
   ajouterChauffeur: (donnees) => appel('chauffeurs', { methode: 'POST', corps: donnees, auth: true }),
+  bureauPublic: () => appel('bureau'),
+  bureauListe: () => appel('bureau', { auth: true }),
+  ajouterBureau: (donnees) => appel('bureau', { methode: 'POST', corps: donnees, auth: true }),
+  modifierBureau: (donnees) => appel('bureau', { methode: 'PUT', corps: donnees, auth: true }),
+  supprimerBureau: (id) => appel('bureau', { methode: 'DELETE', corps: { id }, auth: true }),
+  passerAncien: (id) => appel('bureau', { methode: 'POST', corps: { action: 'passer-ancien', id }, auth: true }),
   marquerPaye: (inscription_id) =>
     appel('inscriptions', { methode: 'POST', corps: { action: 'marquer-paye', inscription_id }, auth: true }),
   retirerInscription: (inscription_id) =>

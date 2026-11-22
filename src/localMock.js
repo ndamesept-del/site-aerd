@@ -18,7 +18,8 @@ function etatVide() {
     chauffeurs: [],
     caravanes: [],
     inscriptions: [],
-    seq: { membre: 1, chauffeur: 1, caravane: 1, inscription: 1 }
+    bureau: [],
+    seq: { membre: 1, chauffeur: 1, caravane: 1, inscription: 1, bureau: 1 }
   }
 }
 
@@ -75,6 +76,7 @@ function avecChauffeur(etat, c) {
     heure_depart: c.heure_depart || '08:00',
     destination: c.destination,
     numero_wave_responsable: c.numero_wave_responsable,
+    montant_fcfa: c.montant_fcfa == null ? null : Number(c.montant_fcfa),
     exemple: !!c.exemple,
     chauffeur: ch ? { prenom: ch.prenom, nom: ch.nom, telephone: ch.telephone } : null
   }
@@ -117,7 +119,15 @@ export const local = {
         return {
           caravanes: liste
             .filter((c) => c.date_depart >= aujourdhui)
-            .map((c) => ({ ...avecChauffeur(etat, c), ...compter(etat, c.id) }))
+            .map((c) => ({
+              ...avecChauffeur(etat, c),
+              ...compter(etat, c.id),
+              // Liste publique : prénom, nom et statut seulement,
+              // jamais de numéro de téléphone.
+              inscrits_liste: etat.inscriptions
+                .filter((i) => i.caravane_id === c.id && i.statut !== 'désisté')
+                .map((i) => ({ prenom: i.prenom, nom: i.nom, statut: i.statut }))
+            }))
         }
       }
       // POST : créer une caravane (bureau)
@@ -126,7 +136,12 @@ export const local = {
       const heure_depart = /^\d{2}:\d{2}$/.test(String(corps.heure_depart || '')) ? corps.heure_depart : '08:00'
       const destination = nettoyerTexte(corps.destination)
       const numero_wave = nettoyerTexte(corps.numero_wave_responsable)
+      const montant_fcfa =
+        corps.montant_fcfa === '' || corps.montant_fcfa == null ? null : Math.trunc(Number(corps.montant_fcfa))
       if (!date_depart || !destination || !numero_wave) erreur('Date, destination et numéro Wave sont obligatoires.')
+      if (montant_fcfa != null && (!Number.isFinite(montant_fcfa) || montant_fcfa < 0)) {
+        erreur('Le montant doit être un nombre positif, en FCFA.')
+      }
       let chauffeur_id = corps.chauffeur_id ? Number(corps.chauffeur_id) : null
       if (corps.nouveau_chauffeur && nettoyerTexte(corps.nouveau_chauffeur.nom)) {
         const nc = corps.nouveau_chauffeur
@@ -141,13 +156,15 @@ export const local = {
         })
       }
       const id = etat.seq.caravane++
-      etat.caravanes.push({ id, date_depart, heure_depart, destination, chauffeur_id, numero_wave_responsable: numero_wave, exemple: false })
+      etat.caravanes.push({ id, date_depart, heure_depart, destination, chauffeur_id, numero_wave_responsable: numero_wave, montant_fcfa, exemple: false })
       sauver(etat)
       return { caravane: avecChauffeur(etat, etat.caravanes.find((c) => c.id === id)) }
     }
 
     if (nom === 'inscriptions') {
       if (corps.action === 'inscrire') {
+        // Champ piège anti-spam (honeypot), comme côté serveur.
+        if (nettoyerTexte(corps.site_web)) erreur('Une erreur est survenue.')
         const caravane_id = Number(corps.caravane_id)
         const prenom = nettoyerTexte(corps.prenom)
         const nom = nettoyerTexte(corps.nom)
@@ -267,6 +284,68 @@ export const local = {
       return { chauffeur }
     }
 
+    if (nom === 'bureau') {
+      // GET : public, tout le monde peut voir l'organigramme.
+      // Les anciens sont renvoyés séparément, sans photo.
+      if ((opts.methode || 'GET') === 'GET') {
+        const liste = [...etat.bureau].sort((a, b) => a.ordre - b.ordre || a.nom.localeCompare(b.nom, 'fr'))
+        const actuel = (m) => ({ ...m, ancien: !!m.ancien })
+        const anciens = liste.filter((m) => m.ancien).map((m) => ({ ...actuel(m), photo: '' }))
+        return { bureau: liste.filter((m) => !m.ancien).map(actuel), anciens }
+      }
+      exigerAuth(opts)
+      if ((opts.methode || 'GET') === 'POST') {
+        // Passer un membre aux anciens : son nom et son poste sont gardés,
+        // mais sa photo est supprimée pour libérer de l'espace.
+        if (corps.action === 'passer-ancien') {
+          const membre = etat.bureau.find((b) => b.id === Number(corps.id))
+          if (!membre) erreur('Membre du bureau introuvable.')
+          membre.ancien = true
+          membre.photo = ''
+          sauver(etat)
+          return { membre: { ...membre } }
+        }
+        const membre = {
+          id: etat.seq.bureau++,
+          prenom: nettoyerTexte(corps.prenom),
+          nom: nettoyerTexte(corps.nom),
+          poste: nettoyerTexte(corps.poste),
+          photo: String(corps.photo || ''),
+          ordre: Number.isFinite(Number(corps.ordre)) ? Math.trunc(Number(corps.ordre)) : 0,
+          ancien: false,
+          exemple: false
+        }
+        if (!membre.prenom || !membre.nom || !membre.poste) erreur('Prénom, nom et poste sont obligatoires.')
+        if (membre.photo && !membre.photo.startsWith('data:image/')) erreur('La photo doit être une image.')
+        etat.bureau.push(membre)
+        sauver(etat)
+        return { membre }
+      }
+      if (opts.methode === 'PUT') {
+        const membre = etat.bureau.find((b) => b.id === Number(corps.id))
+        if (!membre) erreur('Membre du bureau introuvable.')
+        const prenom = nettoyerTexte(corps.prenom)
+        const nom = nettoyerTexte(corps.nom)
+        const poste = nettoyerTexte(corps.poste)
+        if (!prenom || !nom || !poste) erreur('Prénom, nom et poste sont obligatoires.')
+        const photo = String(corps.photo || '')
+        if (photo && !photo.startsWith('data:image/')) erreur('La photo doit être une image.')
+        membre.prenom = prenom
+        membre.nom = nom
+        membre.poste = poste
+        membre.photo = photo
+        membre.ordre = Number.isFinite(Number(corps.ordre)) ? Math.trunc(Number(corps.ordre)) : 0
+        sauver(etat)
+        return { membre }
+      }
+      if (opts.methode === 'DELETE') {
+        etat.bureau = etat.bureau.filter((b) => b.id !== Number(corps.id))
+        sauver(etat)
+        return { ok: true }
+      }
+      erreur('Méthode inconnue.')
+    }
+
     if (nom === 'stats') {
       exigerAuth(opts)
       return {
@@ -285,6 +364,7 @@ export const local = {
         etat.chauffeurs = etat.chauffeurs.filter(garde)
         etat.caravanes = etat.caravanes.filter(garde)
         etat.inscriptions = etat.inscriptions.filter(garde)
+        etat.bureau = etat.bureau.filter(garde)
         sauver(etat)
         return { ok: true }
       }

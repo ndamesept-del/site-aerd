@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { formatDate, formatHeure, normaliserTelephone } from '../data.js'
+import { formatDate, formatHeure, formatMontant, normaliserTelephone } from '../data.js'
 import { api } from '../api.js'
 import Modale from '../components/Modale.jsx'
 
@@ -17,6 +17,7 @@ function FormulaireCaravane({ chauffeurs, onCree, onAnnuler }) {
     heure_depart: '08:00',
     destination: '',
     numero_wave_responsable: '',
+    montant_fcfa: '',
     chauffeur_id: '',
     nouveau_chauffeur: false,
     nc_prenom: '',
@@ -35,7 +36,8 @@ function FormulaireCaravane({ chauffeurs, onCree, onAnnuler }) {
         date_depart: form.date_depart,
         heure_depart: form.heure_depart || '08:00',
         destination: form.destination,
-        numero_wave_responsable: normaliserTelephone(form.numero_wave_responsable)
+        numero_wave_responsable: normaliserTelephone(form.numero_wave_responsable),
+        montant_fcfa: form.montant_fcfa === '' ? null : Number(form.montant_fcfa)
       }
       if (form.nouveau_chauffeur) {
         donnees.nouveau_chauffeur = {
@@ -88,6 +90,19 @@ function FormulaireCaravane({ chauffeurs, onCree, onAnnuler }) {
             placeholder="Ex : 77 000 00 00"
             required
           />
+        </div>
+        <div className="champ">
+          <label htmlFor="car-montant">Montant par place (FCFA)</label>
+          <input
+            id="car-montant"
+            type="number"
+            min="0"
+            step="500"
+            value={form.montant_fcfa}
+            onChange={changer('montant_fcfa')}
+            placeholder="Ex : 7500"
+          />
+          <p className="aide">Ce montant s’affiche sur le site public, à côté du numéro de paiement.</p>
         </div>
         <div className="champ">
           <label htmlFor="car-chauffeur">Chauffeur</label>
@@ -302,6 +317,12 @@ export default function BureauCaravanes() {
                 <p className="ligne">
                   <span className="etiquette">Wave du responsable :</span> {c.numero_wave_responsable}
                 </p>
+                {c.montant_fcfa != null && (
+                  <p className="ligne">
+                    <span className="etiquette">Montant :</span>{' '}
+                    <strong className="montant">{formatMontant(c.montant_fcfa)} par place</strong>
+                  </p>
+                )}
                 <p className="compteurs">
                   <span>
                     <strong>{actifs.length}</strong> inscrit(s)

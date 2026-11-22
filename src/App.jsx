@@ -2,20 +2,55 @@ import { useEffect, useState } from 'react'
 import Accueil from './pages/Accueil.jsx'
 import CaravanesPubliques from './pages/CaravanesPubliques.jsx'
 import Bureau from './pages/Bureau.jsx'
+import Confidentialite from './pages/Confidentialite.jsx'
+import Conditions from './pages/Conditions.jsx'
+import Introuvable from './pages/Introuvable.jsx'
 import { estModeLocal } from './api.js'
 
+// Adresse du navigateur -> page du site. Toute autre adresse
+// affiche la page « introuvable » (404 de l'application).
+const CHEMINS = {
+  '/': 'accueil',
+  '/index.html': 'accueil',
+  '/caravanes': 'caravanes',
+  '/bureau': 'bureau',
+  '/confidentialite': 'confidentialite',
+  '/conditions': 'conditions'
+}
+
+const ADRESSES = {
+  accueil: '/',
+  caravanes: '/caravanes',
+  bureau: '/bureau',
+  confidentialite: '/confidentialite',
+  conditions: '/conditions'
+}
+
+function pagePourAdresse() {
+  return CHEMINS[window.location.pathname] || 'introuvable'
+}
+
 export default function App() {
-  const [page, setPage] = useState('accueil') // accueil | caravanes | bureau
+  const [page, setPage] = useState(() => pagePourAdresse()) // accueil | caravanes | bureau | confidentialite | conditions | introuvable
   const [modeLocal, setModeLocal] = useState(estModeLocal())
 
   useEffect(() => {
     const maj = () => setModeLocal(estModeLocal())
     window.addEventListener('aerd-mode-local', maj)
-    return () => window.removeEventListener('aerd-mode-local', maj)
+    const retour = () => setPage(pagePourAdresse())
+    window.addEventListener('popstate', retour)
+    return () => {
+      window.removeEventListener('aerd-mode-local', maj)
+      window.removeEventListener('popstate', retour)
+    }
   }, [])
 
   const aller = (nouvellePage) => {
     setPage(nouvellePage)
+    const adresse = ADRESSES[nouvellePage]
+    if (adresse && window.location.pathname !== adresse) {
+      window.history.pushState(null, '', adresse)
+    }
     window.scrollTo(0, 0)
   }
 
@@ -64,6 +99,9 @@ export default function App() {
         {page === 'accueil' && <Accueil aller={aller} />}
         {page === 'caravanes' && <CaravanesPubliques />}
         {page === 'bureau' && <Bureau aller={aller} />}
+        {page === 'confidentialite' && <Confidentialite aller={aller} />}
+        {page === 'conditions' && <Conditions aller={aller} />}
+        {page === 'introuvable' && <Introuvable aller={aller} />}
       </main>
 
       <footer className="pied">
@@ -85,6 +123,27 @@ export default function App() {
             </a>{' '}
             — réservé aux membres du bureau de l’amicale.
           </p>
+          <p className="pied-liens">
+            <a
+              href="/confidentialite"
+              onClick={(e) => {
+                e.preventDefault()
+                aller('confidentialite')
+              }}
+            >
+              Confidentialité
+            </a>
+            <a
+              href="/conditions"
+              onClick={(e) => {
+                e.preventDefault()
+                aller('conditions')
+              }}
+            >
+              Conditions d’utilisation
+            </a>
+          </p>
+          <p className="pied-cookies">Ce site ne dépose aucun cookie de suivi.</p>
         </div>
       </footer>
     </div>

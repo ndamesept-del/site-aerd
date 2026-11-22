@@ -1,25 +1,41 @@
 import { useEffect, useState } from 'react'
-import { formatDate, formatHeure, desistementOuvert, normaliserTelephone } from '../data.js'
+import { formatDate, formatHeure, formatMontant, desistementOuvert, normaliserTelephone } from '../data.js'
 import { api } from '../api.js'
 import Modale from '../components/Modale.jsx'
+
+function textePaiement(caravane) {
+  if (caravane.montant_fcfa != null) {
+    return 'Envoie ' + formatMontant(caravane.montant_fcfa) + ' par Wave ou Orange Money au responsable :'
+  }
+  return 'Envoie le montant par Wave ou Orange Money au responsable :'
+}
 
 function FormulaireInscription({ caravane, onTermine, onAnnuler }) {
   const [prenom, setPrenom] = useState('')
   const [nom, setNom] = useState('')
   const [telephone, setTelephone] = useState('')
+  // Champ piège anti-spam (honeypot) : invisible pour une vraie
+  // personne. Si un robot le remplit, le serveur refuse l'inscription.
+  const [siteWeb, setSiteWeb] = useState('')
   const [envoi, setEnvoi] = useState(false)
   const [erreur, setErreur] = useState('')
 
   const envoyer = async (e) => {
     e.preventDefault()
     setErreur('')
+    const telPropre = normaliserTelephone(telephone)
+    if (telPropre.replace(/\D/g, '').length < 9) {
+      setErreur('Le numéro de téléphone semble incomplet. Vérifie-le et réessaie.')
+      return
+    }
     setEnvoi(true)
     try {
       await api.inscrire({
         caravane_id: caravane.id,
         prenom,
         nom,
-        telephone: normaliserTelephone(telephone)
+        telephone: telPropre,
+        site_web: siteWeb
       })
       onTermine({ prenom, nom })
     } catch (err) {
@@ -65,6 +81,16 @@ function FormulaireInscription({ caravane, onTermine, onAnnuler }) {
         />
         <p className="aide">Ton numéro sert à te retrouver dans la liste des inscrits.</p>
       </div>
+      <div className="champ-piege" aria-hidden="true">
+        <label htmlFor={'site-' + caravane.id}>Site web (laisse ce champ vide)</label>
+        <input
+          id={'site-' + caravane.id}
+          value={siteWeb}
+          onChange={(e) => setSiteWeb(e.target.value)}
+          autoComplete="off"
+          tabIndex={-1}
+        />
+      </div>
       <div className="banniere-avertissement">
         <strong>À retenir :</strong> si tu ne peux plus venir, désiste-toi au moins 24 heures avant le départ.
         Après, les désistements sont fermés pour ne pas retarder la caravane.
@@ -89,9 +115,14 @@ function FormulaireDesistement({ caravane, onTermine, onAnnuler }) {
   const envoyer = async (e) => {
     e.preventDefault()
     setErreur('')
+    const telPropre = normaliserTelephone(telephone)
+    if (telPropre.replace(/\D/g, '').length < 9) {
+      setErreur('Le numéro de téléphone semble incomplet. Vérifie-le et réessaie.')
+      return
+    }
     setEnvoi(true)
     try {
-      await api.desister({ caravane_id: caravane.id, telephone: normaliserTelephone(telephone) })
+      await api.desister({ caravane_id: caravane.id, telephone: telPropre })
       onTermine()
     } catch (err) {
       setErreur(err.message || 'Une erreur est survenue. Réessaie.')
@@ -129,7 +160,7 @@ function FormulaireDesistement({ caravane, onTermine, onAnnuler }) {
 }
 
 function CarteCaravane({ caravane, recharger }) {
-  // null | 'inscrire' | 'desister' | 'inscription-ok' | 'desistement-ok'
+  // null | 'inscrire' | 'desister' | 'inscription-ok' | 'desistement-ok' | 'liste'
   const [modale, setModale] = useState(null)
   const [prenomInscrit, setPrenomInscrit] = useState('')
 
@@ -155,6 +186,9 @@ function CarteCaravane({ caravane, recharger }) {
       <p className="date">
         {formatDate(caravane.date_depart)} à {formatHeure(caravane.heure_depart)}
       </p>
+      {caravane.montant_fcfa != null && (
+        <p className="montant">{formatMontant(caravane.montant_fcfa)} par place</p>
+      )}
 
       {caravane.chauffeur ? (
         <p className="ligne">
@@ -177,7 +211,7 @@ function CarteCaravane({ caravane, recharger }) {
       </p>
 
       <div className="encart-wave">
-        <div>Pour payer ta place, envoie le montant par Wave ou Orange Money au responsable :</div>
+        <div>{textePaiement(caravane)}</div>
         <div className="numero">
           <a href={'tel:' + caravane.numero_wave_responsable.replace(/\s/g, '')}>
             {caravane.numero_wave_responsable}
@@ -197,6 +231,9 @@ function CarteCaravane({ caravane, recharger }) {
         <button type="button" className="bouton bouton-plein" onClick={() => setModale('inscrire')}>
           S’inscrire à cette caravane
         </button>
+        <button type="button" className="bouton bouton-secondaire bouton-plein" onClick={() => setModale('liste')}>
+          Liste des inscrits ({(caravane.inscrits_liste || []).length})
+        </button>
         {desistementPossible && (
           <button
             type="button"
@@ -207,6 +244,37 @@ function CarteCaravane({ caravane, recharger }) {
           </button>
         )}
       </div>
+
+      {modale === 'liste' && (
+        <Modale titre={'Liste des inscrits — ' + caravane.destination} onFermer={fermerModale}>
+          <div className="liste-inscrits">
+            {(!caravane.inscrits_liste || caravane.inscrits_liste.length === 0) && (
+              <p className="details">Personne n’est inscrit pour le moment.</p>
+            )}
+            {(caravane.inscrits_liste || []).map((p, index) => (
+              <div className="rangee-inscrit" key={index}>
+                <span>
+                  {p.prenom} {p.nom}
+                </span>
+                {p.statut === 'payé' ? (
+                  <span className="badge badge-paye">Payé</span>
+                ) : (
+                  <span className="badge badge-inscrit">En attente</span>
+                )}
+              </div>
+            ))}
+          </div>
+          <p className="aide">
+            Chacun peut vérifier ici que son inscription est bien enregistrée, sans demander au bureau. Les numéros
+            de téléphone ne s’affichent jamais sur cette liste.
+          </p>
+          <div className="actions">
+            <button type="button" className="bouton bouton-plein" onClick={fermerModale}>
+              Fermer
+            </button>
+          </div>
+        </Modale>
+      )}
 
       {modale === 'inscrire' && (
         <Modale titre={'S’inscrire à la caravane de ' + caravane.destination} onFermer={fermerModale}>
@@ -227,7 +295,7 @@ function CarteCaravane({ caravane, recharger }) {
           </p>
           <h3>Maintenant, paye ta place</h3>
           <div className="encart-wave">
-            <div>Envoie le montant par Wave ou Orange Money au responsable :</div>
+            <div>{textePaiement(caravane)}</div>
             <div className="numero">
               <a href={'tel:' + caravane.numero_wave_responsable.replace(/\s/g, '')}>
                 {caravane.numero_wave_responsable}

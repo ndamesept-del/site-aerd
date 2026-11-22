@@ -4,6 +4,7 @@ import BureauDashboard from './BureauDashboard.jsx'
 import BureauMembres from './BureauMembres.jsx'
 import BureauChauffeurs from './BureauChauffeurs.jsx'
 import BureauCaravanes from './BureauCaravanes.jsx'
+import BureauOrganigramme from './BureauOrganigramme.jsx'
 
 function PageConnexion({ onConnecte }) {
   const [password, setPassword] = useState('')
@@ -58,7 +59,7 @@ function PageConnexion({ onConnecte }) {
 
 export default function Bureau({ aller }) {
   const [connecte, setConnecte] = useState(estConnecte())
-  const [onglet, setOnglet] = useState('tableau') // tableau | membres | chauffeurs | caravanes
+  const [onglet, setOnglet] = useState('tableau') // tableau | membres | chauffeurs | caravanes | bureau
 
   const quitter = () => {
     setToken(null)
@@ -106,12 +107,20 @@ export default function Bureau({ aller }) {
           >
             Caravanes
           </button>
+          <button
+            type="button"
+            className={onglet === 'bureau' ? 'actif' : ''}
+            onClick={() => setOnglet('bureau')}
+          >
+            Organigramme
+          </button>
         </div>
 
         {onglet === 'tableau' && <BureauDashboard allerOnglet={setOnglet} />}
         {onglet === 'membres' && <BureauMembres />}
         {onglet === 'chauffeurs' && <BureauChauffeurs />}
         {onglet === 'caravanes' && <BureauCaravanes />}
+        {onglet === 'bureau' && <BureauOrganigramme />}
       </section>
     </div>
   )
