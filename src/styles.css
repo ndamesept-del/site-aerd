@@ -5,22 +5,44 @@
    Mobile d'abord : la base est pensée pour le téléphone (~360 px),
    puis on élargit pour la tablette et l'ordinateur.
    Les formulaires s'ouvrent en pop-ups (voir .modale-fond).
-   Polices système uniquement : le site reste autonome, sans CDN.
+   Police Inter, libre de droits, fournie DANS le projet
+   (public/fonts/, @font-face ci-dessous) : aucune police ne vient
+   d'un serveur extérieur, le site reste autonome hors ligne.
    ============================================================ */
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/inter-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/inter-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 
 :root {
   --bleu: #123a6e;
   --bleu-fonce: #0d2a52;
+  --bleu-vif: #1a4f96;
   --bleu-clair: #e3ecf8;
+  --bleu-tres-clair: #eef3fb;
   --or: #c9a227;
   --or-fonce: #a8871f;
   --or-clair: #f8f0cd;
   --or-bordure: #e3d199;
-  --fond: #fbfaf6;
+  --fond: #f8f7f2;
   --blanc: #ffffff;
   --texte: #1d2733;
   --texte-doux: #4d5866;
-  --bordure: #e3dcc6;
+  --bordure: #e7e2d2;
   --bordure-champ: #b9b29a;
   --vert: #14532d;
   --vert-fond: #e6f4ec;
@@ -28,6 +50,8 @@
   --rouge-fond: #fdecea;
   --alerte-fond: #fff7d6;
   --alerte-texte: #5c4a00;
+  --ombre: 0 10px 28px rgba(13, 42, 82, 0.1);
+  --ombre-forte: 0 18px 44px rgba(13, 42, 82, 0.16);
 }
 
 * {
@@ -40,9 +64,9 @@ html {
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-size: 17px;
-  line-height: 1.6;
+  line-height: 1.65;
   color: var(--texte);
   background: var(--fond);
 }
@@ -64,22 +88,35 @@ a {
 h1,
 h2,
 h3 {
-  font-family: "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, "Times New Roman", serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
   color: var(--bleu-fonce);
-  line-height: 1.2;
+  line-height: 1.15;
   margin: 0 0 12px;
 }
 
 h1 {
-  font-size: 34px;
+  font-size: 38px;
 }
 
+/* Chaque titre de section porte une barre or bien visible. */
 h2 {
-  font-size: 27px;
+  font-size: 28px;
+}
+
+h2::after {
+  content: "";
+  display: block;
+  width: 56px;
+  height: 5px;
+  background: var(--or);
+  border-radius: 3px;
+  margin-top: 12px;
 }
 
 h3 {
-  font-size: 21px;
+  font-size: 22px;
 }
 
 p {
@@ -96,7 +133,8 @@ p {
 
 .entete {
   background: var(--blanc);
-  border-bottom: 3px solid var(--or);
+  border-bottom: 4px solid var(--or);
+  box-shadow: 0 2px 14px rgba(13, 42, 82, 0.1);
   position: sticky;
   top: 0;
   z-index: 20;
@@ -121,22 +159,27 @@ p {
 }
 
 .marque img {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   flex: 0 0 auto;
+  border: 2px solid var(--or);
+  border-radius: 12px;
+  background: var(--blanc);
 }
 
 .marque .nom {
   display: block;
-  font-family: "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, "Times New Roman", serif;
-  font-size: 21px;
-  font-weight: 700;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
   line-height: 1.1;
 }
 
 .marque .sous-titre {
   display: block;
   font-size: 13px;
+  font-weight: 500;
   color: var(--texte-doux);
   line-height: 1.35;
 }
@@ -173,6 +216,7 @@ p {
   background: var(--bleu);
   border-color: var(--bleu);
   color: #fff;
+  box-shadow: 0 6px 16px rgba(18, 58, 110, 0.28);
 }
 
 /* Bandeau du mode local (développement seulement) */
@@ -193,20 +237,21 @@ p {
   min-height: 52px;
   padding: 13px 24px;
   font-size: 17px;
-  font-weight: 700;
+  font-weight: 800;
   font-family: inherit;
   line-height: 1.3;
   text-decoration: none;
-  color: #1c2430;
-  background: var(--or);
-  border: 2px solid var(--or);
-  border-radius: 10px;
+  color: #fff;
+  background: var(--bleu);
+  border: 2px solid var(--bleu);
+  border-radius: 14px;
+  box-shadow: 0 8px 20px rgba(18, 58, 110, 0.25);
   cursor: pointer;
 }
 
 .bouton:hover {
-  background: var(--or-fonce);
-  border-color: var(--or-fonce);
+  background: var(--bleu-fonce);
+  border-color: var(--bleu-fonce);
 }
 
 .bouton:disabled {
@@ -218,6 +263,7 @@ p {
   background: var(--blanc);
   border-color: var(--bleu);
   color: var(--bleu);
+  box-shadow: 0 4px 12px rgba(13, 42, 82, 0.08);
 }
 
 .bouton-secondaire:hover {
@@ -245,7 +291,8 @@ p {
   color: var(--bleu);
   background: var(--blanc);
   border: 1px solid var(--bordure-champ);
-  border-radius: 10px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(13, 42, 82, 0.06);
   cursor: pointer;
 }
 
@@ -273,33 +320,38 @@ p {
 
 /* ---------- Accueil ---------- */
 
+/* Bandeau bleu clair : le haut de page se voit tout de suite. */
 .hero {
-  padding: 40px 0 34px;
+  background: var(--bleu-tres-clair);
+  border-bottom: 1px solid #d8e2f2;
+  padding: 44px 0 40px;
 }
 
 .hero h1 {
-  max-width: 720px;
+  max-width: 760px;
 }
 
 .hero .chapeau {
   font-size: 19px;
+  font-weight: 500;
   color: #33404f;
   max-width: 660px;
 }
 
 .regle-or {
-  width: 64px;
-  height: 4px;
+  width: 72px;
+  height: 5px;
   background: var(--or);
   border: none;
-  margin: 0 0 18px;
+  border-radius: 3px;
+  margin: 0 0 20px;
 }
 
 .actions {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-top: 24px;
+  margin-top: 26px;
 }
 
 .actions .bouton {
@@ -307,17 +359,21 @@ p {
 }
 
 .faits {
-  margin-top: 24px;
+  margin-top: 26px;
   font-size: 16px;
   color: var(--texte-doux);
 }
 
 .faits strong {
   color: var(--bleu-fonce);
+  background: var(--bleu-clair);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-weight: 700;
 }
 
 .section {
-  padding: 40px 0;
+  padding: 48px 0;
 }
 
 .section + .section {
@@ -332,13 +388,13 @@ p {
 
 .liste-simple {
   list-style: none;
-  margin: 20px 0 0;
+  margin: 22px 0 0;
   padding: 0;
 }
 
 .liste-simple li {
   position: relative;
-  padding: 0 0 16px 30px;
+  padding: 0 0 18px 32px;
   max-width: 720px;
 }
 
@@ -346,35 +402,34 @@ p {
   content: "";
   position: absolute;
   left: 0;
-  top: 10px;
-  width: 12px;
-  height: 12px;
+  top: 9px;
+  width: 13px;
+  height: 13px;
   background: var(--or);
+  border-radius: 4px;
 }
 
+.liste-simple strong {
+  color: var(--bleu-fonce);
+}
+
+/* Chaque filière est une carte blanche avec une ombre douce. */
 .filieres {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 4px 32px;
+  gap: 12px;
   list-style: none;
-  margin: 20px 0 0;
+  margin: 22px 0 0;
   padding: 0;
 }
 
 .filieres li {
-  position: relative;
-  padding: 10px 0 10px 30px;
-  border-bottom: 1px solid #efe9d6;
-}
-
-.filieres li::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 18px;
-  width: 12px;
-  height: 12px;
-  background: var(--or);
+  background: var(--blanc);
+  border: 1px solid var(--bordure);
+  border-left: 5px solid var(--or);
+  border-radius: 16px;
+  box-shadow: var(--ombre);
+  padding: 16px 18px;
 }
 
 .filieres strong {
@@ -382,7 +437,7 @@ p {
 }
 
 .niveaux {
-  margin-top: 20px;
+  margin-top: 22px;
   font-size: 18px;
 }
 
@@ -395,13 +450,14 @@ p {
 .carte {
   background: var(--blanc);
   border: 1px solid var(--bordure);
-  border-radius: 14px;
-  padding: 20px;
+  border-radius: 18px;
+  box-shadow: var(--ombre);
+  padding: 22px;
   margin-bottom: 18px;
 }
 
 .carte-caravane {
-  border-left: 5px solid var(--bleu);
+  border-left: 6px solid var(--bleu);
 }
 
 .carte-caravane h3 {
@@ -411,6 +467,7 @@ p {
 .carte-caravane .date {
   color: var(--texte-doux);
   font-size: 16px;
+  font-weight: 600;
 }
 
 .ligne {
@@ -435,6 +492,7 @@ p {
   background: var(--bleu-clair);
   border-radius: 999px;
   padding: 5px 13px;
+  font-weight: 600;
 }
 
 .compteurs strong {
@@ -445,16 +503,17 @@ p {
 .encart-wave {
   background: var(--or-clair);
   border: 1px solid var(--or-bordure);
-  border-radius: 10px;
-  padding: 14px 16px;
+  border-radius: 14px;
+  box-shadow: var(--ombre);
+  padding: 16px 18px;
   margin: 14px 0;
 }
 
 .encart-wave .numero {
-  font-size: 21px;
+  font-size: 23px;
   font-weight: 800;
+  letter-spacing: -0.01em;
   color: var(--bleu-fonce);
-  letter-spacing: 0.5px;
 }
 
 .encart-wave .numero a {
@@ -468,9 +527,10 @@ p {
   background: var(--alerte-fond);
   border: 2px solid var(--or);
   border-left: 6px solid var(--or);
-  border-radius: 10px;
-  padding: 14px 16px;
-  margin: 0 0 18px;
+  border-radius: 14px;
+  box-shadow: var(--ombre);
+  padding: 16px 18px;
+  margin: 0 0 20px;
   color: var(--alerte-texte);
   font-size: 16px;
 }
@@ -484,8 +544,9 @@ p {
   background: var(--rouge-fond);
   border: 2px solid #e0a49e;
   border-left: 6px solid var(--rouge);
-  border-radius: 10px;
-  padding: 14px 16px;
+  border-radius: 14px;
+  box-shadow: var(--ombre);
+  padding: 16px 18px;
   margin: 14px 0;
   color: var(--rouge);
   font-size: 16px;
@@ -495,22 +556,25 @@ p {
   color: var(--texte-doux);
   background: var(--blanc);
   border: 1px dashed var(--bordure-champ);
-  border-radius: 14px;
-  padding: 24px 18px;
+  border-radius: 18px;
+  box-shadow: var(--ombre);
+  padding: 26px 18px;
   text-align: center;
 }
 
 .rangee {
   background: var(--blanc);
   border: 1px solid var(--bordure);
-  border-radius: 12px;
-  padding: 16px 18px;
+  border-radius: 16px;
+  box-shadow: var(--ombre);
+  padding: 18px 20px;
   margin-bottom: 12px;
 }
 
 .rangee .nom {
-  font-weight: 700;
-  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  font-size: 19px;
   color: var(--bleu-fonce);
 }
 
@@ -529,7 +593,7 @@ p {
 
 .badge {
   display: inline-block;
-  padding: 3px 11px;
+  padding: 4px 12px;
   border-radius: 999px;
   font-size: 14px;
   font-weight: 700;
@@ -561,8 +625,9 @@ p {
 .formulaire {
   background: var(--blanc);
   border: 1px solid var(--bordure);
-  border-radius: 10px;
-  padding: 18px;
+  border-radius: 18px;
+  box-shadow: var(--ombre);
+  padding: 20px;
   margin-top: 14px;
 }
 
@@ -590,7 +655,7 @@ p {
   font-family: inherit;
   padding: 13px 14px;
   border: 1px solid var(--bordure-champ);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--blanc);
   color: var(--texte);
 }
@@ -631,8 +696,9 @@ p {
   width: 100%;
   max-height: 92vh;
   overflow-y: auto;
-  border-radius: 18px 18px 0 0;
-  padding: 18px 18px 26px;
+  border-radius: 22px 22px 0 0;
+  box-shadow: var(--ombre-forte);
+  padding: 20px 20px 28px;
 }
 
 .modale-entete {
@@ -645,7 +711,7 @@ p {
 
 .modale-entete h3 {
   margin: 0;
-  font-size: 22px;
+  font-size: 24px;
 }
 
 .modale-fermer {
@@ -659,6 +725,7 @@ p {
   background: var(--blanc);
   border: 1px solid var(--bordure-champ);
   border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(13, 42, 82, 0.08);
   cursor: pointer;
 }
 
@@ -669,6 +736,7 @@ p {
 /* Dans une pop-up, le formulaire n'a plus besoin de son propre cadre. */
 .modale .formulaire {
   border: none;
+  box-shadow: none;
   padding: 0;
   margin: 0;
 }
@@ -684,7 +752,7 @@ p {
   border: 1px solid #9fd0b2;
   color: var(--vert);
   padding: 13px 15px;
-  border-radius: 10px;
+  border-radius: 12px;
   margin: 14px 0;
 }
 
@@ -693,7 +761,7 @@ p {
   border: 1px solid #f0b6b0;
   color: var(--rouge);
   padding: 13px 15px;
-  border-radius: 10px;
+  border-radius: 12px;
   margin: 14px 0;
 }
 
@@ -702,7 +770,7 @@ p {
   border: 1px solid #b7cbe6;
   color: var(--bleu-fonce);
   padding: 13px 15px;
-  border-radius: 10px;
+  border-radius: 12px;
   margin: 14px 0;
 }
 
@@ -737,6 +805,7 @@ p {
   background: var(--blanc);
   border: 1px solid var(--bordure-champ);
   border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(13, 42, 82, 0.06);
   cursor: pointer;
 }
 
@@ -748,6 +817,7 @@ p {
   background: var(--bleu);
   border-color: var(--bleu);
   color: #fff;
+  box-shadow: 0 6px 16px rgba(18, 58, 110, 0.28);
 }
 
 .stats {
@@ -760,15 +830,17 @@ p {
 .stat {
   background: var(--blanc);
   border: 1px solid var(--bordure);
-  border-top: 4px solid var(--bleu);
-  border-radius: 12px;
+  border-top: 5px solid var(--or);
+  border-radius: 18px;
+  box-shadow: var(--ombre);
   padding: 18px;
 }
 
 .stat .nombre {
-  font-family: "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, "Times New Roman", serif;
-  font-size: 36px;
-  font-weight: 700;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
   color: var(--bleu-fonce);
   line-height: 1.1;
 }
@@ -794,7 +866,8 @@ p {
   font-family: inherit;
   padding: 13px 14px;
   border: 1px solid var(--bordure-champ);
-  border-radius: 10px;
+  border-radius: 14px;
+  box-shadow: var(--ombre);
 }
 
 .barre-bureau {
@@ -810,15 +883,17 @@ p {
 
 .pied {
   background: var(--bleu-fonce);
+  border-top: 4px solid var(--or);
   color: #dbe6f5;
-  padding: 36px 0;
+  padding: 40px 0;
   margin-top: 52px;
 }
 
 .pied .nom {
-  font-family: "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, "Times New Roman", serif;
-  font-size: 20px;
-  font-weight: 700;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
   color: #fff;
   margin-bottom: 6px;
 }
@@ -836,11 +911,11 @@ p {
 
 @media (min-width: 720px) {
   h1 {
-    font-size: 42px;
+    font-size: 52px;
   }
 
   h2 {
-    font-size: 30px;
+    font-size: 34px;
   }
 
   .entete nav {
@@ -876,11 +951,11 @@ p {
   }
 
   .hero {
-    padding: 56px 0 44px;
+    padding: 64px 0 56px;
   }
 
   .section {
-    padding: 48px 0;
+    padding: 64px 0;
   }
 
   .onglets-bureau {
@@ -898,8 +973,8 @@ p {
 
   .modale {
     max-width: 560px;
-    border-radius: 16px;
-    padding: 24px 24px 28px;
+    border-radius: 20px;
+    padding: 26px 26px 30px;
   }
 }
 
