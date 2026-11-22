@@ -50,10 +50,7 @@ function PageConnexion({ onConnecte }) {
             {envoi ? 'Vérification…' : 'Entrer dans l’espace bureau'}
           </button>
         </form>
-        <p className="message-info">
-          Le mot de passe est partagé par le bureau. Si un membre quitte ses fonctions, change-le
-          dans les variables d’environnement du site (voir le README).
-        </p>
+        <p className="message-info">Le mot de passe est partagé par le bureau.</p>
       </div>
     </div>
   )

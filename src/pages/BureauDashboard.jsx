@@ -1,14 +1,10 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api.js'
-import Modale from '../components/Modale.jsx'
 
 export default function BureauDashboard({ allerOnglet }) {
   const [stats, setStats] = useState(null)
   const [charge, setCharge] = useState(true)
   const [erreur, setErreur] = useState('')
-  const [message, setMessage] = useState('')
-  const [travail, setTravail] = useState(false)
-  const [confirmerSuppression, setConfirmerSuppression] = useState(false)
 
   const charger = async () => {
     try {
@@ -24,25 +20,6 @@ export default function BureauDashboard({ allerOnglet }) {
   useEffect(() => {
     charger()
   }, [])
-
-  const gererExemples = async (action) => {
-    setMessage('')
-    setTravail(true)
-    try {
-      await api.exemples(action)
-      setMessage(
-        action === 'charger'
-          ? 'Données d’exemple ajoutées (3 membres, 1 chauffeur, 1 caravane). Elles sont marquées « Exemple » et tu peux les supprimer ensuite.'
-          : 'Données d’exemple supprimées.'
-      )
-      charger()
-    } catch (err) {
-      setMessage('')
-      setErreur(err.message || 'Une erreur est survenue.')
-    } finally {
-      setTravail(false)
-    }
-  }
 
   if (charge) return <p className="chargement">Chargement…</p>
   if (erreur) return <p className="message-erreur">{erreur}</p>
@@ -72,7 +49,6 @@ export default function BureauDashboard({ allerOnglet }) {
         </div>
       </div>
 
-      {message && <p className="message-ok">{message}</p>}
 
       <h3>Pour commencer</h3>
       <ul className="liste-simple">
@@ -99,56 +75,6 @@ export default function BureauDashboard({ allerOnglet }) {
         </button>
       </div>
 
-      <div className="carte" style={{ marginTop: 24 }}>
-        <h3>Données d’exemple (pour tester seulement)</h3>
-        <p>
-          Pour essayer le site sans mettre de vraies données, tu peux charger des exemples fictifs : 3 membres,
-          1 chauffeur et 1 caravane vers Diourbel. Ils sont marqués « Exemple » partout, et tu peux les supprimer
-          d’un clic quand tu as fini de tester.
-        </p>
-        <div className="actions">
-          <button type="button" className="bouton-discret" disabled={travail} onClick={() => gererExemples('charger')}>
-            Charger des exemples
-          </button>
-          <button
-            type="button"
-            className="bouton-discret bouton-danger"
-            disabled={travail}
-            onClick={() => setConfirmerSuppression(true)}
-          >
-            Supprimer les exemples
-          </button>
-        </div>
-      </div>
-
-      {confirmerSuppression && (
-        <Modale titre="Supprimer les exemples ?" onFermer={() => setConfirmerSuppression(false)}>
-          <p>
-            Toutes les données d’exemple (membres, chauffeur, caravane et inscriptions marqués « Exemple »)
-            seront supprimées. Les vraies données ne sont pas touchées.
-          </p>
-          <div className="actions">
-            <button
-              type="button"
-              className="bouton bouton-danger bouton-plein"
-              disabled={travail}
-              onClick={() => {
-                setConfirmerSuppression(false)
-                gererExemples('supprimer')
-              }}
-            >
-              {travail ? 'Suppression…' : 'Oui, supprimer les exemples'}
-            </button>
-            <button
-              type="button"
-              className="bouton bouton-secondaire bouton-plein"
-              onClick={() => setConfirmerSuppression(false)}
-            >
-              Annuler
-            </button>
-          </div>
-        </Modale>
-      )}
     </div>
   )
 }

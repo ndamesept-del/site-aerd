@@ -120,6 +120,4 @@ export const api = {
   definirNumeroTresorier: (numero_wave_tresorier) =>
     appel('parametres', { methode: 'POST', corps: { numero_wave_tresorier }, auth: true }),
 
-  // Données d'exemple (tests seulement, marquées comme exemples)
-  exemples: (action) => appel('exemples', { methode: 'POST', corps: { action }, auth: true })
 }

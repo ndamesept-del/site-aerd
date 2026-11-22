@@ -334,7 +334,7 @@ export default function BureauOrganigramme() {
               )}
               <div className="rangee-bureau-texte">
                 <div className="nom">
-                  {m.prenom} {m.nom} {m.exemple && <span className="badge badge-exemple">Exemple</span>}
+                  {m.prenom} {m.nom}
                 </div>
                 <div className="details">{m.poste}</div>
               </div>

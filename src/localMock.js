@@ -564,65 +564,6 @@ export const local = {
       }
     }
 
-    if (nom === 'exemples') {
-      exigerAuth(opts)
-      if (corps.action === 'supprimer') {
-        const garde = (x) => !x.exemple
-        etat.membres = etat.membres.filter(garde)
-        etat.chauffeurs = etat.chauffeurs.filter(garde)
-        etat.caravanes = etat.caravanes.filter(garde)
-        etat.inscriptions = etat.inscriptions.filter(garde)
-        etat.bureau = etat.bureau.filter(garde)
-        sauver(etat)
-        return { ok: true }
-      }
-      if (corps.action === 'charger') {
-        const dans7jours = new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString().slice(0, 10)
-        const idChauffeur = etat.seq.chauffeur++
-        etat.chauffeurs.push({ id: idChauffeur, prenom: 'Mamadou', nom: 'Exemple', telephone: '70 000 00 09', exemple: true })
-        const idCaravane = etat.seq.caravane++
-        etat.caravanes.push({
-          id: idCaravane,
-          date_depart: dans7jours,
-          heure_depart: '08:00',
-          destination: 'Diourbel',
-          chauffeur_id: idChauffeur,
-          numero_wave_responsable: '70 000 00 00',
-          exemple: true
-        })
-        const exemples = [
-          { prenom: 'Aminata', nom: 'Exemple', telephone: '70 000 00 01', statut: 'payé' },
-          { prenom: 'Moussa', nom: 'Exemple', telephone: '70 000 00 02', statut: 'inscrit' },
-          { prenom: 'Fatou', nom: 'Exemple', telephone: '70 000 00 03', statut: 'inscrit' }
-        ]
-        for (const e of exemples) {
-          etat.inscriptions.push({
-            id: etat.seq.inscription++,
-            caravane_id: idCaravane,
-            prenom: e.prenom,
-            nom: e.nom,
-            telephone: e.telephone,
-            statut: e.statut,
-            exemple: true
-          })
-          etat.membres.push({
-            id: etat.seq.membre++,
-            prenom: e.prenom,
-            nom: e.nom,
-            telephone: e.telephone,
-            telephone_parent: '70 000 00 04',
-            ufr_departement: 'UFR SEG',
-            niveau: 'L2',
-            origine: 'Diourbel',
-            boursier: null,
-            exemple: true
-          })
-        }
-        sauver(etat)
-        return { ok: true }
-      }
-      erreur('Action inconnue.')
-    }
 
     erreur('Fonction inconnue : ' + nom)
   }
