@@ -36,6 +36,12 @@ CREATE TABLE IF NOT EXISTS membres (
   -- bureau confirme le paiement si le membre n'en avait pas encore.
   numero_carte TEXT UNIQUE,
   carte_payee BOOLEAN NOT NULL DEFAULT FALSE,
+  -- Le membre a déclaré avoir payé sa carte (bouton « J'ai payé » sur la
+  -- page « Ma carte de membre »). Il apparaît alors en haut de l'onglet
+  -- « Cartes de membres » du bureau (« Paiements déclarés – à valider »),
+  -- pour que le trésorier le valide directement. La validation remet
+  -- cette case à faux.
+  carte_paiement_declare BOOLEAN NOT NULL DEFAULT FALSE,
   exemple BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -43,6 +49,7 @@ CREATE TABLE IF NOT EXISTS membres (
 -- Si la table membres existe déjà sans ces colonnes, ajoute-les avec :
 --   ALTER TABLE membres ADD COLUMN IF NOT EXISTS numero_carte TEXT UNIQUE;
 --   ALTER TABLE membres ADD COLUMN IF NOT EXISTS carte_payee BOOLEAN NOT NULL DEFAULT FALSE;
+--   ALTER TABLE membres ADD COLUMN IF NOT EXISTS carte_paiement_declare BOOLEAN NOT NULL DEFAULT FALSE;
 
 -- Si la table membres existe déjà sans la colonne « boursier »,
 -- ajoute-la avec :

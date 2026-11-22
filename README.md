@@ -79,6 +79,7 @@ ALTER TABLE caravanes ADD COLUMN IF NOT EXISTS montant_fcfa INTEGER;
 ALTER TABLE caravanes ADD COLUMN IF NOT EXISTS lieu_depart TEXT;
 ALTER TABLE membres ADD COLUMN IF NOT EXISTS numero_carte TEXT UNIQUE;
 ALTER TABLE membres ADD COLUMN IF NOT EXISTS carte_payee BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE membres ADD COLUMN IF NOT EXISTS carte_paiement_declare BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE bureau ADD COLUMN IF NOT EXISTS telephone TEXT;
 
 CREATE TABLE IF NOT EXISTS bureau (
@@ -107,12 +108,30 @@ La dernière ligne ajoute le président actuel à l'organigramme (sans photo pou
 l'instant : il l'ajoutera lui-même dans l'espace bureau, onglet « Organigramme »).
 
 **Cartes de membres (1000 FCFA)** : chaque membre a un numéro de carte (AERD-2026-001, AERD-2026-002, ...)
-attribué tout seul à son ajout. Le membre paie 1000 FCFA par Wave ou Orange Money au trésorier (le numéro
-est celui des paramètres, onglet « Cotisations »), le bureau confirme le paiement dans l'onglet « Membres »
-(bouton « Marquer Carte payée »), puis le membre retrouve sa carte sur la page publique « Ma carte de membre »
-(il tape son numéro de téléphone) et la télécharge en image PNG, avec son nom, son numéro et un QR code qui
-regroupe son nom et son numéro. Pas de photo sur la carte (décision du bureau, novembre 2026). Le numéro du
-président s'affiche sur la page d'accueil, sous sa carte (contact du président).
+attribué tout seul à la validation du paiement. Le membre retrouve sa carte sur la page publique
+« Ma carte de membre » avec son PRÉNOM et son NOM (pas avec son numéro de téléphone : le numéro peut
+changer, le nom ne change pas ; si plusieurs membres ont le même nom, le site les propose tous et la
+personne choisit le sien). Il paie 1000 FCFA par Wave ou Orange Money au trésorier (le numéro est celui
+des paramètres, onglet « Cotisations »), puis il clique sur « J'ai payé 1 000 FCFA » : son paiement est
+déclaré. Seuls ceux qui ont fait une demande de carte apparaissent dans l'onglet « Cartes de membres »
+du bureau, dans « Paiements déclarés – à valider » : le trésorier les valide directement là (gros
+bouton bleu), puis le membre revient sur la page « Ma carte de membre », appuie sur « Récupérer ma carte »
+et télécharge sa carte en image PNG, avec son nom, son numéro et un QR code qui regroupe son nom et son
+numéro. Après avoir déclaré son paiement, le membre voit aussi un bouton « Récupérer ma carte » qui
+vérifie si le trésorier a validé : si oui, sa carte s'affiche tout de suite ; sinon, le site lui dit
+d'attendre encore. Ceux qui n'ont pas
+encore demandé de carte n'apparaissent pas dans cet onglet (on les retrouve dans l'onglet Membres,
+filtre « Sans carte »).
+
+**Lien direct de la carte (plus rapide) :** pour chaque carte payée, l'onglet « Cartes de membres » a un
+bouton « Copier le lien de la carte ». Le trésorier le copie et l'envoie au membre par WhatsApp. Le lien
+contient déjà le nom du membre (ex : `/ma-carte?prenom=Awa&nom=Diallo`) : en cliquant dessus, le membre
+voit sa carte tout de suite et peut la télécharger, sans rien taper. Sans le lien, il peut aussi venir
+sur la page « Ma carte de membre » et taper son prénom et son nom. Pas de photo sur la carte (décision du bureau, novembre 2026). Le
+numéro du président s'affiche sur la page d'accueil, sous sa carte (contact du président). Dans l'onglet
+« Membres », celui qui a une carte payée porte une étoile dorée ★ à côté de son nom, et on peut filtrer
+la liste : « Tous les membres », « ★ Avec carte » ou « Sans carte ». L'étoile sert à retrouver d'un coup
+d'œil qui a une carte de membre.
 
 **Cotisations et dons de tickets (volet social)** : si ta base existe déjà, colle
 aussi ces 4 requêtes dans l'éditeur SQL de Neon :
@@ -201,6 +220,7 @@ Il vient de la variable d’environnement `BUREAU_PASSWORD`.
 - Sur Netlify : va dans Site settings → Environment variables, et ajoute :
   - `BUREAU_PASSWORD` : ton mot de passe (fort, connu du bureau seulement)
   - `CARAVANES_PASSWORD` : mot de passe de l’onglet Caravanes, connu de l’administrateur seulement
+  - `CARTES_PASSWORD` : mot de passe de l’onglet Cartes de membres, connu du trésorier seulement
   - `DATABASE_URL` : l’adresse de ta base PostgreSQL (donnée par Neon)
 
 Pour changer le mot de passe plus tard : change la variable dans Netlify,
@@ -210,6 +230,21 @@ puis redéploie le site. L’ancien mot de passe ne marche plus.
 (`CARAVANES_PASSWORD`), séparé de celui du bureau. Seul l’administrateur le
 connaît : sans lui, personne ne peut ouvrir l’onglet, ni créer une caravane,
 ni valider un paiement (« Marquer Payé »).
+
+**Mot de passe des cartes de membres :** l’onglet Cartes de membres a lui
+aussi son propre mot de passe (`CARTES_PASSWORD`), séparé de celui du
+bureau. Seul le trésorier le connaît : il donne accès seulement à
+cette partie (voir les cartes, valider un paiement de carte), pas au
+reste de l’espace bureau.
+
+**Réduction sur la place de caravane (pour motiver) :** ce n'est pas une
+subvention d'ailleurs, c'est une remise sur le paiement de la caravane.
+Elle n'est pas dans le site : le bureau l'annonce (par exemple dans le
+groupe WhatsApp), et les membres qui ont une carte de membre paient
+directement le prix réduit par Wave ou Orange Money (ex : place à
+4 000 FCFA, réduction de 500 FCFA, le membre avec une carte envoie
+3 500 FCFA). Le bureau marque ensuite « Payé » comme d'habitude, après
+vérification.
 
 ## 5. Déployer le site sur Netlify
 
@@ -222,7 +257,7 @@ ni valider un paiement (« Marquer Payé »).
    - Functions directory : `netlify/functions`
    (Ces réglages sont déjà dans le fichier `netlify.toml`, Netlify les reprend tout seul.)
 4. Avant de déployer, ajoute les variables d’environnement (étape 4) :
-   `DATABASE_URL`, `BUREAU_PASSWORD` et `CARAVANES_PASSWORD`.
+   `DATABASE_URL`, `BUREAU_PASSWORD`, `CARAVANES_PASSWORD` et `CARTES_PASSWORD`.
 5. Clique sur « Deploy ». Netlify te donne une adresse, par exemple
    `https://aerd-uam.netlify.com`.
 6. Dans la console SQL de ta base, vérifie que les tables existent
@@ -357,5 +392,5 @@ site-aerd/
   au maximum). Pas de captcha, pas de service externe.
 - **Images :** le logo est compressé (512 px, environ 42 Ko). Les photos du bureau sont redimensionnées
   dans le navigateur (400 px maximum, JPEG) avant d’être enregistrées.
-- **Clés secrètes :** `DATABASE_URL`, `BUREAU_PASSWORD` et `CARAVANES_PASSWORD` sont des variables d’environnement Netlify
+- **Clés secrètes :** `DATABASE_URL`, `BUREAU_PASSWORD`, `CARAVANES_PASSWORD` et `CARTES_PASSWORD` sont des variables d’environnement Netlify
   seulement, jamais dans le code. Le HTTPS est forcé par Netlify par défaut.

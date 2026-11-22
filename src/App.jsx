@@ -83,7 +83,8 @@ export default function App() {
               Accueil
             </button>
             <button type="button" className={page === 'carte' ? 'actif' : ''} onClick={() => aller('carte')}>
-              Ma carte de membre
+              <span className="etiquette-longue">Ma carte de membre</span>
+              <span className="etiquette-courte">Ma carte</span>
             </button>
             <button type="button" className={page === 'caravanes' ? 'actif' : ''} onClick={() => aller('caravanes')}>
               Caravanes

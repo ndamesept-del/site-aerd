@@ -72,3 +72,39 @@ export function nonAutoriseCaravanes() {
     body: JSON.stringify({ error: 'Accès refusé. Entre le mot de passe des caravanes.' })
   }
 }
+
+// Mot de passe des cartes de membres, séparé du mot de passe du bureau.
+// Seul le trésorier le connaît : il donne accès seulement à l'onglet
+// « Cartes de membres », pas au reste de l'espace bureau. Il vient
+// UNIQUEMENT de la variable d'environnement CARTES_PASSWORD (définie
+// dans Netlify). Valeur par défaut : développement local seulement.
+// À CHANGER.
+export const MOT_DE_PASSE_CARTES_DEFAUT = 'change-moi-cartes'
+
+export function motDePasseCartes() {
+  return process.env.CARTES_PASSWORD || MOT_DE_PASSE_CARTES_DEFAUT
+}
+
+// Jeton cartes : signature du mot de passe des cartes de membres.
+// Il voyage dans l'en-tête X-Jeton-Cartes.
+export function creerJetonCartes() {
+  return crypto.createHmac('sha256', motDePasseCartes()).update('cartes-aerd').digest('hex')
+}
+
+export function jetonCartesValide(event) {
+  const jeton = (event.headers?.['x-jeton-cartes'] || event.headers?.['X-Jeton-Cartes'] || '').trim()
+  if (!jeton) return false
+  const attendu = creerJetonCartes()
+  const a = Buffer.from(jeton)
+  const b = Buffer.from(attendu)
+  if (a.length !== b.length) return false
+  return crypto.timingSafeEqual(a, b)
+}
+
+export function nonAutoriseCartes() {
+  return {
+    statusCode: 401,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ error: 'Accès refusé. Entre le mot de passe des cartes de membres.' })
+  }
+}

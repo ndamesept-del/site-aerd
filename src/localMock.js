@@ -23,6 +23,7 @@ function prochainNumeroCarteLocal(etat) {
 const CLE = 'aerd-local-v1'
 const MOT_DE_PASSE_DEV = 'change-moi'
 const MOT_DE_PASSE_DEV_CARAVANES = 'change-moi-caravanes'
+const MOT_DE_PASSE_DEV_CARTES = 'change-moi-cartes'
 
 function etatVide() {
   return {
@@ -96,6 +97,18 @@ function exigerAuthCaravanes(opts) {
   }
 }
 
+function jetonLocalCartes() {
+  return hachageSimple(MOT_DE_PASSE_DEV_CARTES + ':cartes')
+}
+
+function exigerAuthCartes(opts) {
+  if (!opts.jetonCartes || opts.jetonCartes !== jetonLocalCartes()) {
+    const e = new Error('Accès refusé. Entre le mot de passe des cartes de membres.')
+    e.status = 401
+    throw e
+  }
+}
+
 function avecChauffeur(etat, c) {
   const ch = c.chauffeur_id ? etat.chauffeurs.find((x) => x.id === c.chauffeur_id) : null
   return {
@@ -135,6 +148,53 @@ export const local = {
       return { token: jetonLocalCaravanes() }
     }
 
+    if (nom === 'cartes-login') {
+      if (corps.password !== MOT_DE_PASSE_DEV_CARTES) erreur('Mot de passe incorrect.')
+      return { token: jetonLocalCartes() }
+    }
+
+    // Cartes de membres (trésorier seulement) : liste limitée à ce qu'il
+    // faut pour valider les cartes, et validation du paiement.
+    if (nom === 'cartes') {
+      exigerAuthCartes(opts)
+      const projeter = (m) => ({
+        id: m.id,
+        prenom: m.prenom,
+        nom: m.nom,
+        telephone: m.telephone,
+        ufr_departement: m.ufr_departement,
+        niveau: m.niveau,
+        origine: m.origine,
+        numero_carte: m.numero_carte || null,
+        carte_payee: !!m.carte_payee,
+        carte_paiement_declare: !!m.carte_paiement_declare
+      })
+      if ((opts.methode || 'GET') === 'GET') {
+        const q = nettoyerTexte(params.q).toLowerCase()
+        let liste = [...etat.membres].sort((a, b) => a.nom.localeCompare(b.nom, 'fr'))
+        if (q) {
+          liste = liste.filter(
+            (m) =>
+              (m.nom + ' ' + m.prenom).toLowerCase().includes(q) ||
+              (m.prenom + ' ' + m.nom).toLowerCase().includes(q) ||
+              m.telephone.replace(/\s/g, '').includes(q.replace(/\s/g, ''))
+          )
+        }
+        return { membres: liste.map(projeter) }
+      }
+      if (corps.action === 'carte-payee') {
+        const membre = etat.membres.find((m) => m.id === Number(corps.id))
+        if (!membre) erreur('Membre introuvable.')
+        const payee = corps.payee === true
+        if (payee && !membre.numero_carte) membre.numero_carte = prochainNumeroCarteLocal(etat)
+        membre.carte_payee = payee
+        membre.carte_paiement_declare = false
+        sauver(etat)
+        return { membre: projeter(membre) }
+      }
+      erreur('Action inconnue.')
+    }
+
     if (nom === 'caravanes') {
       if ((opts.methode || 'GET') === 'GET') {
         const liste = [...etat.caravanes].sort((a, b) => (a.date_depart < b.date_depart ? -1 : 1))
@@ -145,7 +205,14 @@ export const local = {
               ...avecChauffeur(etat, c),
               inscriptions: etat.inscriptions
                 .filter((i) => i.caravane_id === c.id)
-                .map((i) => ({ id: i.id, prenom: i.prenom, nom: i.nom, telephone: i.telephone, statut: i.statut, exemple: !!i.exemple }))
+                .map((i) => ({
+                  id: i.id,
+                  prenom: i.prenom,
+                  nom: i.nom,
+                  telephone: i.telephone,
+                  statut: i.statut,
+                  exemple: !!i.exemple
+                }))
             }))
           }
         }
@@ -311,6 +378,7 @@ export const local = {
         const payee = corps.payee === true || corps.payee === 'true'
         if (payee && !membreTrouve.numero_carte) membreTrouve.numero_carte = prochainNumeroCarteLocal(etat)
         membreTrouve.carte_payee = payee
+        membreTrouve.carte_paiement_declare = false
         sauver(etat)
         return { membre: membreTrouve }
       }
@@ -326,6 +394,7 @@ export const local = {
         boursier,
         numero_carte: prochainNumeroCarteLocal(etat),
         carte_payee: false,
+        carte_paiement_declare: false,
         exemple: false
       }
       if (!membre.prenom || !membre.nom || !membre.telephone || !membre.ufr_departement || !membre.niveau || !membre.origine) {
@@ -603,21 +672,48 @@ export const local = {
     }
 
     if (nom === 'ma-carte') {
-      const telephone = nettoyerTexte(corps.telephone).replace(/\s/g, '')
-      if (telephone.replace(/\D/g, '').length < 9) erreur('Le numéro de téléphone semble incomplet.')
-      const trouve = etat.membres.find((m) => String(m.telephone).replace(/\s/g, '') === telephone)
-      if (!trouve) {
-        erreur('Numéro introuvable. Vérifie ton numéro, ou inscris-toi d’abord à l’amicale : le bureau t’ajoute ensuite à la liste des membres.')
-      }
-      return {
-        membre: {
-          id: trouve.id,
-          prenom: trouve.prenom,
-          nom: trouve.nom,
-          numero_carte: trouve.numero_carte || null,
-          carte_payee: !!trouve.carte_payee
+      // Déclarer son paiement : le membre apparaît en haut de l'onglet
+      // « Cartes de membres » du bureau, pour que le trésorier le valide.
+      if (corps.action === 'declarer-paiement') {
+        const trouve = etat.membres.find((m) => m.id === Number(corps.id))
+        if (!trouve || trouve.carte_payee) erreur('Membre introuvable ou carte déjà payée.')
+        trouve.carte_paiement_declare = true
+        sauver(etat)
+        return {
+          membre: {
+            id: trouve.id,
+            prenom: trouve.prenom,
+            nom: trouve.nom,
+            numero_carte: trouve.numero_carte || null,
+            carte_payee: !!trouve.carte_payee,
+            carte_paiement_declare: true,
+            ufr_departement: trouve.ufr_departement,
+            niveau: trouve.niveau
+          }
         }
       }
+      // Recherche par nom (le numéro de téléphone peut changer, le nom non).
+      const prenom = nettoyerTexte(corps.prenom).toLowerCase()
+      const nomRecherche = nettoyerTexte(corps.nom).toLowerCase()
+      if (prenom.length < 2 || nomRecherche.length < 2) erreur('Écris ton prénom et ton nom en entier.')
+      const trouves = etat.membres
+        .filter(
+          (m) =>
+            String(m.prenom).toLowerCase().includes(prenom) &&
+            String(m.nom).toLowerCase().includes(nomRecherche)
+        )
+        .slice(0, 10)
+        .map((m) => ({
+          id: m.id,
+          prenom: m.prenom,
+          nom: m.nom,
+          numero_carte: m.numero_carte || null,
+          carte_payee: !!m.carte_payee,
+          carte_paiement_declare: !!m.carte_paiement_declare,
+          ufr_departement: m.ufr_departement,
+          niveau: m.niveau
+        }))
+      return { membres: trouves }
     }
 
     if (nom === 'stats') {

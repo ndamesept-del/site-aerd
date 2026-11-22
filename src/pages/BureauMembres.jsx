@@ -126,6 +126,9 @@ function FormulaireMembre({ membre, onAjoute, onAnnuler }) {
 export default function BureauMembres() {
   const [membres, setMembres] = useState([])
   const [recherche, setRecherche] = useState('')
+  // Filtre par carte de membre : 'toutes' | 'payee' | 'non-payee'.
+  // L'étoile ★ montre d'un coup d'œil qui a une carte payée.
+  const [filtreCarte, setFiltreCarte] = useState('toutes')
   const [charge, setCharge] = useState(true)
   const [erreur, setErreur] = useState('')
   const [message, setMessage] = useState('')
@@ -207,6 +210,30 @@ export default function BureauMembres() {
       {message && <p className="message-ok">{message}</p>}
       {erreur && <p className="message-erreur">{erreur}</p>}
 
+      <div className="filtres" role="group" aria-label="Filtrer par carte de membre">
+        <button
+          type="button"
+          className={'filtre' + (filtreCarte === 'toutes' ? ' actif' : '')}
+          onClick={() => setFiltreCarte('toutes')}
+        >
+          Tous les membres ({membres.length})
+        </button>
+        <button
+          type="button"
+          className={'filtre' + (filtreCarte === 'payee' ? ' actif' : '')}
+          onClick={() => setFiltreCarte('payee')}
+        >
+          <span className="etoile-carte">★</span> Avec carte ({membres.filter((m) => m.carte_payee).length})
+        </button>
+        <button
+          type="button"
+          className={'filtre' + (filtreCarte === 'non-payee' ? ' actif' : '')}
+          onClick={() => setFiltreCarte('non-payee')}
+        >
+          Sans carte ({membres.filter((m) => !m.carte_payee).length})
+        </button>
+      </div>
+
       <div className="actions">
         <button type="button" className="bouton bouton-bleu" onClick={() => setModaleOuverte(true)}>
           Ajouter un membre
@@ -234,16 +261,41 @@ export default function BureauMembres() {
 
       <div style={{ marginTop: 20 }}>
         {charge && <p className="chargement">Chargement…</p>}
-        {!charge && membres.length === 0 && (
-          <p className="vide">
-            {recherche ? 'Aucun membre trouvé pour cette recherche.' : 'Aucun membre enregistré pour le moment.'}
-          </p>
-        )}
         {!charge &&
-          membres.map((m) => (
+          membres.filter(
+            (m) =>
+              filtreCarte === 'toutes' ||
+              (filtreCarte === 'payee' && m.carte_payee) ||
+              (filtreCarte === 'non-payee' && !m.carte_payee)
+          ).length === 0 && (
+            <p className="vide">
+              {recherche
+                ? 'Aucun membre trouvé pour cette recherche.'
+                : filtreCarte === 'payee'
+                  ? 'Aucun membre n’a encore de carte payée.'
+                  : filtreCarte === 'non-payee'
+                    ? 'Tous les membres ont une carte payée.'
+                    : 'Aucun membre enregistré pour le moment.'}
+            </p>
+          )}
+        {!charge &&
+          membres
+            .filter(
+              (m) =>
+                filtreCarte === 'toutes' ||
+                (filtreCarte === 'payee' && m.carte_payee) ||
+                (filtreCarte === 'non-payee' && !m.carte_payee)
+            )
+            .map((m) => (
             <div className="rangee" key={m.id}>
               <div className="nom">
-                {m.prenom} {m.nom} {m.exemple && <span className="badge badge-exemple">Exemple</span>}{' '}
+                {m.prenom} {m.nom}{' '}
+                {m.carte_payee && (
+                  <span className="etoile-carte" title={'Carte de membre payée : ' + (m.numero_carte || '')}>
+                    ★
+                  </span>
+                )}{' '}
+                {m.exemple && <span className="badge badge-exemple">Exemple</span>}{' '}
                 {m.boursier === true ? (
                   <span className="badge badge-inscrit">Boursier</span>
                 ) : m.boursier === false ? (
@@ -289,7 +341,19 @@ export default function BureauMembres() {
         {!charge && membres.length > 0 && (
           <p className="compteurs">
             <span>
-              <strong>{membres.length}</strong> membre(s) affiché(s)
+              <strong>
+                {
+                  membres.filter(
+                    (m) =>
+                      filtreCarte === 'toutes' ||
+                      (filtreCarte === 'payee' && m.carte_payee) ||
+                      (filtreCarte === 'non-payee' && !m.carte_payee)
+                  ).length
+                }
+              </strong>{' '}
+              membre(s) affiché(s)
+              {filtreCarte === 'payee' && ' — avec carte'}
+              {filtreCarte === 'non-payee' && ' — sans carte'}
             </span>
           </p>
         )}

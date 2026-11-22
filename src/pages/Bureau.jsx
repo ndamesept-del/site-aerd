@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { api, setToken, estConnecte, setTokenCaravanes, estConnecteCaravanes } from '../api.js'
+import { api, setToken, estConnecte, setTokenCaravanes, estConnecteCaravanes, setTokenCartes, estConnecteCartes } from '../api.js'
 import BureauDashboard from './BureauDashboard.jsx'
 import BureauMembres from './BureauMembres.jsx'
 import BureauCartes from './BureauCartes.jsx'
@@ -102,15 +102,63 @@ function PageConnexionCaravanes({ onConnecte }) {
   )
 }
 
+function PageConnexionCartes({ onConnecte }) {
+  const [password, setPassword] = useState('')
+  const [envoi, setEnvoi] = useState(false)
+  const [erreur, setErreur] = useState('')
+
+  const envoyer = async (e) => {
+    e.preventDefault()
+    setErreur('')
+    setEnvoi(true)
+    try {
+      const data = await api.cartesLogin(password)
+      setTokenCartes(data.token)
+      onConnecte()
+    } catch {
+      setErreur('Mot de passe incorrect. Réessaie.')
+    } finally {
+      setEnvoi(false)
+    }
+  }
+
+  return (
+    <div>
+      <h3>Cartes de membres, accès protégé</h3>
+      <p>Seul le trésorier connaît ce mot de passe. Sans lui, on ne peut ni voir les cartes, ni valider un paiement de carte.</p>
+      <form onSubmit={envoyer}>
+        {erreur && <p className="message-erreur">{erreur}</p>}
+        <div className="champ">
+          <label htmlFor="mot-de-passe-cartes">Mot de passe des cartes de membres</label>
+          <input
+            id="mot-de-passe-cartes"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            required
+          />
+        </div>
+        <button type="submit" className="bouton bouton-bleu bouton-plein" disabled={envoi}>
+          {envoi ? 'Vérification…' : 'Ouvrir l’onglet Cartes de membres'}
+        </button>
+      </form>
+    </div>
+  )
+}
+
 export default function Bureau({ aller }) {
   const [connecte, setConnecte] = useState(estConnecte())
   const [caravanesConnecte, setCaravanesConnecte] = useState(estConnecteCaravanes())
+  const [cartesConnecte, setCartesConnecte] = useState(estConnecteCartes())
   const [onglet, setOnglet] = useState('tableau') // tableau | membres | cartes | chauffeurs | caravanes | bureau | cotisations | dons
 
   const quitter = () => {
     setToken(null)
     setTokenCaravanes(null)
     setCaravanesConnecte(false)
+    setTokenCartes(null)
+    setCartesConnecte(false)
     setConnecte(false)
     aller('accueil')
   }
@@ -126,6 +174,13 @@ export default function Bureau({ aller }) {
   const quitterBureau = () => {
     setToken(null)
     setConnecte(false)
+  }
+
+  // Jeton des cartes périmé (mot de passe changé) : on efface le jeton
+  // et on montre de nouveau le formulaire du mot de passe.
+  const quitterCartes = () => {
+    setTokenCartes(null)
+    setCartesConnecte(false)
   }
 
   if (!connecte) {
@@ -196,7 +251,12 @@ export default function Bureau({ aller }) {
 
         {onglet === 'tableau' && <BureauDashboard allerOnglet={setOnglet} onDeconnecte={quitterBureau} />}
         {onglet === 'membres' && <BureauMembres />}
-        {onglet === 'cartes' && <BureauCartes />}
+        {onglet === 'cartes' &&
+          (cartesConnecte ? (
+            <BureauCartes onAccesRefuse={quitterCartes} />
+          ) : (
+            <PageConnexionCartes onConnecte={() => setCartesConnecte(true)} />
+          ))}
         {onglet === 'chauffeurs' && <BureauChauffeurs />}
         {onglet === 'caravanes' &&
           (caravanesConnecte ? (

@@ -42,7 +42,7 @@ export async function handler(event) {
       const q = nettoyerTexte(event.queryStringParameters?.q)
       if (q) {
         const res = await pool.query(
-          `SELECT id, prenom, nom, telephone, telephone_parent, ufr_departement, niveau, origine, boursier, numero_carte, carte_payee, exemple
+          `SELECT id, prenom, nom, telephone, telephone_parent, ufr_departement, niveau, origine, boursier, numero_carte, carte_payee, carte_paiement_declare, exemple
            FROM membres
            WHERE (prenom || ' ' || nom) ILIKE $1 OR (nom || ' ' || prenom) ILIKE $1
               OR REPLACE(telephone, ' ', '') ILIKE $2
@@ -53,7 +53,7 @@ export async function handler(event) {
         return reponse(200, { membres: res.rows })
       }
       const res = await pool.query(
-        `SELECT id, prenom, nom, telephone, telephone_parent, ufr_departement, niveau, origine, boursier, numero_carte, carte_payee, exemple
+        `SELECT id, prenom, nom, telephone, telephone_parent, ufr_departement, niveau, origine, boursier, numero_carte, carte_payee, carte_paiement_declare, exemple
          FROM membres ORDER BY nom ASC, prenom ASC LIMIT 500`
       )
       return reponse(200, { membres: res.rows })
@@ -92,7 +92,7 @@ export async function handler(event) {
         `UPDATE membres SET prenom = $2, nom = $3, telephone = $4, telephone_parent = $5,
            ufr_departement = $6, niveau = $7, origine = $8, boursier = $9
          WHERE id = $1
-         RETURNING id, prenom, nom, telephone, telephone_parent, ufr_departement, niveau, origine, boursier, numero_carte, carte_payee`,
+         RETURNING id, prenom, nom, telephone, telephone_parent, ufr_departement, niveau, origine, boursier, numero_carte, carte_payee, carte_paiement_declare`,
         [
           id,
           membre.prenom,
@@ -120,8 +120,8 @@ export async function handler(event) {
         let numero = actuel.rows[0].numero_carte
         if (payee && !numero) numero = await prochainNumeroCarte(pool)
         const res = await pool.query(
-          `UPDATE membres SET carte_payee = $2, numero_carte = $3 WHERE id = $1
-           RETURNING id, prenom, nom, telephone, telephone_parent, ufr_departement, niveau, origine, boursier, numero_carte, carte_payee`,
+          `UPDATE membres SET carte_payee = $2, numero_carte = $3, carte_paiement_declare = FALSE WHERE id = $1
+           RETURNING id, prenom, nom, telephone, telephone_parent, ufr_departement, niveau, origine, boursier, numero_carte, carte_payee, carte_paiement_declare`,
           [id, payee, numero]
         )
         return reponse(200, { membre: res.rows[0] })
@@ -146,9 +146,9 @@ export async function handler(event) {
       }
       const numero_carte = await prochainNumeroCarte(pool)
       const ins = await pool.query(
-        `INSERT INTO membres (prenom, nom, telephone, telephone_parent, ufr_departement, niveau, origine, boursier, numero_carte, carte_payee)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, FALSE)
-         RETURNING id, prenom, nom, telephone, telephone_parent, ufr_departement, niveau, origine, boursier, numero_carte, carte_payee`,
+        `INSERT INTO membres (prenom, nom, telephone, telephone_parent, ufr_departement, niveau, origine, boursier, numero_carte, carte_payee, carte_paiement_declare)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, FALSE, FALSE)
+         RETURNING id, prenom, nom, telephone, telephone_parent, ufr_departement, niveau, origine, boursier, numero_carte, carte_payee, carte_paiement_declare`,
         [
           membre.prenom,
           membre.nom,

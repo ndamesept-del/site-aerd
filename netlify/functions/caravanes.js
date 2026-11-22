@@ -68,7 +68,11 @@ export async function handler(event) {
              FROM inscriptions WHERE caravane_id = $1 ORDER BY created_at ASC`,
             [ligne.id]
           )
-          caravanes.push({ ...avecChauffeur(ligne), inscriptions: ins.rows })
+          const caravane = avecChauffeur(ligne)
+          caravanes.push({
+            ...caravane,
+            inscriptions: ins.rows.map((i) => ({ ...i }))
+          })
         }
         return reponse(200, { caravanes })
       }

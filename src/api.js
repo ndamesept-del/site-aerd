@@ -42,7 +42,20 @@ export function estConnecteCaravanes() {
   return !!getTokenCaravanes()
 }
 
-async function appelFonction(nom, { methode = 'GET', corps = null, auth = false, params = null, caravanes = false } = {}) {
+function getTokenCartes() {
+  return localStorage.getItem('aerd-cartes-token') || ''
+}
+
+export function setTokenCartes(jeton) {
+  if (jeton) localStorage.setItem('aerd-cartes-token', jeton)
+  else localStorage.removeItem('aerd-cartes-token')
+}
+
+export function estConnecteCartes() {
+  return !!getTokenCartes()
+}
+
+async function appelFonction(nom, { methode = 'GET', corps = null, auth = false, params = null, caravanes = false, cartes = false } = {}) {
   let url = FN + '/' + nom
   if (params) {
     const qs = new URLSearchParams(params)
@@ -51,6 +64,7 @@ async function appelFonction(nom, { methode = 'GET', corps = null, auth = false,
   const options = { method: methode, headers: { 'Content-Type': 'application/json' } }
   if (auth && getToken()) options.headers.Authorization = 'Bearer ' + getToken()
   if (caravanes && getTokenCaravanes()) options.headers['X-Jeton-Caravanes'] = getTokenCaravanes()
+  if (cartes && getTokenCartes()) options.headers['X-Jeton-Cartes'] = getTokenCartes()
   if (corps) options.body = JSON.stringify(corps)
   const res = await fetch(url, options)
   const texte = await res.text()
@@ -72,7 +86,8 @@ async function appelFonction(nom, { methode = 'GET', corps = null, auth = false,
 }
 
 async function appel(nom, opts = {}) {
-  if (modeLocal) return local.appel(nom, { ...opts, token: getToken(), jetonCaravanes: getTokenCaravanes() })
+  if (modeLocal)
+    return local.appel(nom, { ...opts, token: getToken(), jetonCaravanes: getTokenCaravanes(), jetonCartes: getTokenCartes() })
   if (!import.meta.env.DEV) return appelFonction(nom, opts)
   try {
     return await appelFonction(nom, opts)
@@ -81,7 +96,7 @@ async function appel(nom, opts = {}) {
     if (e.status === 404 || e.status === 405 || /fetch|JSON|Unexpected token/i.test(e.message)) {
       modeLocal = true
       window.dispatchEvent(new Event('aerd-mode-local'))
-      return local.appel(nom, { ...opts, token: getToken(), jetonCaravanes: getTokenCaravanes() })
+      return local.appel(nom, { ...opts, token: getToken(), jetonCaravanes: getTokenCaravanes(), jetonCartes: getTokenCartes() })
     }
     throw e
   }
@@ -90,7 +105,7 @@ async function appel(nom, opts = {}) {
 export const api = {
   // Public
   caravanesPubliques: () => appel('caravanes'),
-  maCarte: (telephone) => appel('ma-carte', { methode: 'POST', corps: { telephone } }),
+  maCarte: (donnees) => appel('ma-carte', { methode: 'POST', corps: donnees }),
   inscrire: (donnees) => appel('inscriptions', { methode: 'POST', corps: { action: 'inscrire', ...donnees } }),
   desister: (donnees) => appel('inscriptions', { methode: 'POST', corps: { action: 'desister', ...donnees } }),
 
@@ -99,6 +114,12 @@ export const api = {
 
   // Caravanes (connexion séparée, administrateur seulement)
   caravanesLogin: (password) => appel('caravanes-login', { methode: 'POST', corps: { password } }),
+
+  // Cartes de membres (connexion séparée, trésorier seulement)
+  cartesLogin: (password) => appel('cartes-login', { methode: 'POST', corps: { password } }),
+  cartesMembres: (q = '') => appel('cartes', { cartes: true, params: q ? { q } : null }),
+  cartesValider: (id, payee) =>
+    appel('cartes', { methode: 'POST', corps: { action: 'carte-payee', id, payee }, cartes: true }),
 
   // Bureau (données)
   stats: () => appel('stats', { auth: true }),

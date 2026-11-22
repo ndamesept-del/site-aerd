@@ -199,7 +199,6 @@ function CarteCaravane({ caravane, recharger }) {
       {caravane.montant_fcfa != null && (
         <p className="montant">{formatMontant(caravane.montant_fcfa)} par place</p>
       )}
-
       {caravane.chauffeur ? (
         <p className="ligne">
           <span className="etiquette">Chauffeur :</span> {caravane.chauffeur.prenom} {caravane.chauffeur.nom} —{' '}

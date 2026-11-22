@@ -229,6 +229,16 @@ p {
   background: rgba(255, 255, 255, 0.7);
 }
 
+/* Sur téléphone, le bouton « Ma carte de membre » est trop long pour sa
+   colonne et son texte est coupé : on montre « Ma carte » à la place. */
+.entete nav button .etiquette-longue {
+  display: none;
+}
+
+.entete nav button .etiquette-courte {
+  display: inline;
+}
+
 .entete nav button.actif {
   background: var(--bleu-fonce);
   color: #fff;
@@ -1100,6 +1110,47 @@ p {
   color: var(--bleu);
 }
 
+.etoile-carte {
+  color: #e3b02e;
+  font-size: 1.15em;
+  line-height: 1;
+}
+
+.filtres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 4px;
+}
+
+.filtre {
+  min-height: 40px;
+  padding: 8px 16px;
+  font-size: 14.5px;
+  font-weight: 600;
+  font-family: inherit;
+  white-space: nowrap;
+  color: var(--bleu-fonce);
+  background: var(--blanc);
+  border: 1px solid var(--bordure);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.filtre:hover {
+  background: var(--bleu-clair);
+}
+
+.filtre.actif {
+  color: var(--blanc);
+  background: var(--bleu-fonce);
+  border-color: var(--bleu-fonce);
+}
+
+.filtre.actif .etoile-carte {
+  color: #e3b02e;
+}
+
 .badge-paye {
   background: var(--vert-fond);
   color: var(--vert);
@@ -1664,6 +1715,14 @@ p {
     font-size: 15.5px;
   }
 
+  .entete nav button .etiquette-longue {
+    display: inline;
+  }
+
+  .entete nav button .etiquette-courte {
+    display: none;
+  }
+
   .marque img {
     width: 76px;
     height: 76px;
@@ -1731,13 +1790,6 @@ p {
 
   .cta {
     padding: 60px 56px;
-  }
-
-  .onglets-bureau {
-    flex-wrap: wrap;
-    overflow-x: visible;
-    margin: 18px 0 24px;
-    padding: 0;
   }
 
   .modale-fond {
