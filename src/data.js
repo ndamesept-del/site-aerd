@@ -43,11 +43,16 @@ export function formatMontant(montant) {
 export const FORMULAIRE_INSCRIPTION =
   'https://docs.google.com/forms/d/e/1FAIpQLSf8jPCCyyJYzn9BS6qPUFTTW2xZOyvSZZ030FpM1tH2faqdAg/viewform'
 
-// Met en forme une date (AAAA-MM-JJ) en français, ex : samedi 12 décembre 2026
+// Met en forme une date en français, ex : samedi 12 décembre 2026.
+// La date arrive soit en « AAAA-MM-JJ » (formulaire), soit en texte ISO
+// complet (« 2026-11-29T00:00:00.000Z ») quand elle vient de la base de
+// données : on ne garde que les 10 premiers caractères, sinon la date
+// s'affichait telle quelle, en brut, sur la carte.
 export function formatDate(dateStr) {
   if (!dateStr) return ''
-  const d = new Date(dateStr + 'T12:00:00')
-  if (Number.isNaN(d.getTime())) return dateStr
+  const jour = String(dateStr).slice(0, 10)
+  const d = new Date(jour + 'T12:00:00')
+  if (Number.isNaN(d.getTime())) return String(dateStr)
   return d.toLocaleDateString('fr-FR', {
     weekday: 'long',
     day: 'numeric',
@@ -100,7 +105,8 @@ export const DELAI_DESISTEMENT_HEURES = 24
 // heure_depart HH:MM, 08:00 par défaut). L'heure est l'heure de Dakar (UTC+0).
 export function dateDepartCaravane(caravane) {
   const heure = String((caravane && caravane.heure_depart) || '08:00').slice(0, 5)
-  return new Date(caravane.date_depart + 'T' + heure + ':00Z')
+  const jour = String((caravane && caravane.date_depart) || '').slice(0, 10)
+  return new Date(jour + 'T' + heure + ':00Z')
 }
 
 // Vrai si on peut encore se désister (24 h ou plus avant le départ).

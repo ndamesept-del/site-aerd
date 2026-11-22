@@ -22,11 +22,20 @@ function lieuDepartParDefaut(destination) {
   return ''
 }
 
+// La base renvoie les dates comme des objets Date (sérialisés ensuite en
+// « 2026-11-29T00:00:00.000Z ») et les heures en « 08:00:00 » : on renvoie
+// des textes simples (« 2026-11-29 », « 08:00 ») pour que l'affichage
+// reste « samedi 29 novembre 2026 » et « 08:00 » partout.
+function normaliserDate(valeur) {
+  if (valeur instanceof Date) return valeur.toISOString().slice(0, 10)
+  return String(valeur || '').slice(0, 10)
+}
+
 function avecChauffeur(ligne) {
   return {
     id: ligne.id,
-    date_depart: ligne.date_depart,
-    heure_depart: ligne.heure_depart,
+    date_depart: normaliserDate(ligne.date_depart),
+    heure_depart: String(ligne.heure_depart || '08:00').slice(0, 5),
     destination: ligne.destination,
     lieu_depart: ligne.lieu_depart || null,
     numero_wave_responsable: ligne.numero_wave_responsable,
