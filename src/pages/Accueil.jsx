@@ -67,20 +67,32 @@ export default function Accueil({ aller }) {
             L’amicale, c’est un réseau d’entraide entre les étudiants originaires de Diourbel et de Bambey
             qui étudient à l’UAM. Le bureau est élu par les membres, et tout le travail est bénévole.
           </p>
-          <ul className="liste-simple">
-            <li>
-              <strong>Accueillir les nouveaux bacheliers.</strong> Orientation, parrainage par les anciens,
-              informations pratiques dès l’arrivée à Diamniadio : filière, logement, repères sur le campus.
-            </li>
-            <li>
-              <strong>Organiser les caravanes.</strong> Des départs groupés vers Diourbel et Bambey, avec une liste
-              d’inscrits et un suivi des paiements, pour que personne ne soit oublié et que l’argent soit clair.
-            </li>
-            <li>
-              <strong>Garder le lien entre les anciens chauffeurs et les nouveaux.</strong> L’annuaire des chauffeurs
-              permet aux futurs responsables de retrouver facilement les chauffeurs déjà utilisés.
-            </li>
-          </ul>
+          <div className="cartes-fonctions">
+            <article className="carte-fonction">
+              <span className="numero-fonction" aria-hidden="true">1</span>
+              <h3>Accueillir les nouveaux bacheliers</h3>
+              <p>
+                Orientation, parrainage par les anciens, informations pratiques dès l’arrivée à Diamniadio :
+                filière, logement, repères sur le campus.
+              </p>
+            </article>
+            <article className="carte-fonction">
+              <span className="numero-fonction" aria-hidden="true">2</span>
+              <h3>Organiser les caravanes</h3>
+              <p>
+                Des départs groupés vers Diourbel et Bambey, avec une liste d’inscrits et un suivi des
+                paiements, pour que personne ne soit oublié et que l’argent soit clair.
+              </p>
+            </article>
+            <article className="carte-fonction">
+              <span className="numero-fonction" aria-hidden="true">3</span>
+              <h3>Garder le lien entre les générations</h3>
+              <p>
+                L’annuaire des chauffeurs permet aux futurs responsables de retrouver facilement les
+                chauffeurs déjà utilisés par les anciens.
+              </p>
+            </article>
+          </div>
         </div>
       </section>
 
@@ -200,16 +212,18 @@ export default function Accueil({ aller }) {
         </div>
       </section>
 
-      <section className="section">
+      <section className="section section-cta">
         <div className="conteneur">
-          <h2>Devenir membre</h2>
-          <p className="intro">
-            Pour rejoindre l’amicale, remplis le formulaire d’inscription. Le bureau vérifie tes informations
-            et t’ajoute à la liste des membres. Tes informations restent dans l’amicale.
-          </p>
-          <a className="bouton bouton-bleu" href={FORMULAIRE_INSCRIPTION} target="_blank" rel="noreferrer">
-            Rejoindre l’amicale
-          </a>
+          <div className="cta">
+            <h2>Devenir membre</h2>
+            <p className="intro">
+              Pour rejoindre l’amicale, remplis le formulaire d’inscription. Le bureau vérifie tes informations
+              et t’ajoute à la liste des membres. Tes informations restent dans l’amicale.
+            </p>
+            <a className="bouton" href={FORMULAIRE_INSCRIPTION} target="_blank" rel="noreferrer">
+              Rejoindre l’amicale
+            </a>
+          </div>
         </div>
       </section>
     </div>
