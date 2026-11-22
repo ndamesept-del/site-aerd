@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { formatDate, formatHeure, desistementOuvert, normaliserTelephone } from '../data.js'
 import { api } from '../api.js'
+import Modale from '../components/Modale.jsx'
 
 function FormulaireInscription({ caravane, onTermine, onAnnuler }) {
   const [prenom, setPrenom] = useState('')
@@ -30,7 +31,6 @@ function FormulaireInscription({ caravane, onTermine, onAnnuler }) {
 
   return (
     <form className="formulaire" onSubmit={envoyer}>
-      <h3>S’inscrire à la caravane de {caravane.destination}</h3>
       {erreur && <p className="message-erreur">{erreur}</p>}
       <div className="champ">
         <label htmlFor={'prenom-' + caravane.id}>Prénom</label>
@@ -65,6 +65,10 @@ function FormulaireInscription({ caravane, onTermine, onAnnuler }) {
         />
         <p className="aide">Ton numéro sert à te retrouver dans la liste des inscrits.</p>
       </div>
+      <div className="banniere-avertissement">
+        <strong>À retenir :</strong> si tu ne peux plus venir, désiste-toi au moins 24 heures avant le départ.
+        Après, les désistements sont fermés pour ne pas retarder la caravane.
+      </div>
       <div className="actions">
         <button type="submit" className="bouton bouton-plein" disabled={envoi}>
           {envoi ? 'Enregistrement…' : 'Confirmer mon inscription'}
@@ -98,7 +102,6 @@ function FormulaireDesistement({ caravane, onTermine, onAnnuler }) {
 
   return (
     <form className="formulaire" onSubmit={envoyer}>
-      <h3>Se désister de la caravane de {caravane.destination}</h3>
       <p>Si tu ne peux plus venir, annule ton inscription ici. Ta place se libère pour quelqu’un d’autre.</p>
       {erreur && <p className="message-erreur">{erreur}</p>}
       <div className="champ">
@@ -126,31 +129,25 @@ function FormulaireDesistement({ caravane, onTermine, onAnnuler }) {
 }
 
 function CarteCaravane({ caravane, recharger }) {
-  const [mode, setMode] = useState(null) // null | 'inscrire' | 'desister'
-  const [confirmation, setConfirmation] = useState(null) // { type, texte }
+  // null | 'inscrire' | 'desister' | 'inscription-ok' | 'desistement-ok'
+  const [modale, setModale] = useState(null)
+  const [prenomInscrit, setPrenomInscrit] = useState('')
 
   // Règle : plus de désistement quand il reste moins de 24 h avant le départ.
   const desistementPossible = desistementOuvert(caravane)
 
   const apresInscription = ({ prenom }) => {
-    setMode(null)
-    setConfirmation({
-      type: 'inscription',
-      texte:
-        'Merci ' +
-        prenom +
-        ', ton inscription est bien enregistrée pour la caravane de ' +
-        caravane.destination +
-        '.'
-    })
+    setPrenomInscrit(prenom)
+    setModale('inscription-ok')
     recharger()
   }
 
   const apresDesistement = () => {
-    setMode(null)
-    setConfirmation({ type: 'desistement', texte: 'Ton inscription est annulée. Ta place est libérée.' })
+    setModale('desistement-ok')
     recharger()
   }
+
+  const fermerModale = () => setModale(null)
 
   return (
     <article className="carte carte-caravane">
@@ -180,7 +177,7 @@ function CarteCaravane({ caravane, recharger }) {
       </p>
 
       <div className="encart-wave">
-        <div>Pour payer ta place, envoie le montant par Wave au responsable :</div>
+        <div>Pour payer ta place, envoie le montant par Wave ou Orange Money au responsable :</div>
         <div className="numero">
           <a href={'tel:' + caravane.numero_wave_responsable.replace(/\s/g, '')}>
             {caravane.numero_wave_responsable}
@@ -189,31 +186,75 @@ function CarteCaravane({ caravane, recharger }) {
         <div>Le bureau confirmera ton paiement après vérification.</div>
       </div>
 
-      {confirmation && <p className="message-ok">{confirmation.texte}</p>}
+      {!desistementPossible && (
+        <p className="banniere-ferme">
+          <strong>Désistements fermés :</strong> la caravane part dans moins de 24 heures. Contacte le bureau si tu
+          as un problème.
+        </p>
+      )}
 
-      {mode === null && (
-        <div className="actions">
-          <button type="button" className="bouton bouton-plein" onClick={() => setMode('inscrire')}>
-            S’inscrire à cette caravane
+      <div className="actions">
+        <button type="button" className="bouton bouton-plein" onClick={() => setModale('inscrire')}>
+          S’inscrire à cette caravane
+        </button>
+        {desistementPossible && (
+          <button
+            type="button"
+            className="bouton bouton-secondaire bouton-plein"
+            onClick={() => setModale('desister')}
+          >
+            Se désister
           </button>
-          {desistementPossible ? (
-            <button type="button" className="bouton bouton-secondaire bouton-plein" onClick={() => setMode('desister')}>
-              Se désister
-            </button>
-          ) : (
-            <p className="aide">
-              Les désistements sont fermés : la caravane part dans moins de 24 heures. Contacte le bureau si tu as
-              un problème.
-            </p>
-          )}
-        </div>
+        )}
+      </div>
+
+      {modale === 'inscrire' && (
+        <Modale titre={'S’inscrire à la caravane de ' + caravane.destination} onFermer={fermerModale}>
+          <FormulaireInscription caravane={caravane} onTermine={apresInscription} onAnnuler={fermerModale} />
+        </Modale>
       )}
 
-      {mode === 'inscrire' && (
-        <FormulaireInscription caravane={caravane} onTermine={apresInscription} onAnnuler={() => setMode(null)} />
+      {modale === 'desister' && (
+        <Modale titre={'Se désister de la caravane de ' + caravane.destination} onFermer={fermerModale}>
+          <FormulaireDesistement caravane={caravane} onTermine={apresDesistement} onAnnuler={fermerModale} />
+        </Modale>
       )}
-      {mode === 'desister' && (
-        <FormulaireDesistement caravane={caravane} onTermine={apresDesistement} onAnnuler={() => setMode(null)} />
+
+      {modale === 'inscription-ok' && (
+        <Modale titre="Inscription confirmée" onFermer={fermerModale}>
+          <p className="message-ok">
+            Merci {prenomInscrit}, ton inscription est bien enregistrée pour la caravane de {caravane.destination}.
+          </p>
+          <h3>Maintenant, paye ta place</h3>
+          <div className="encart-wave">
+            <div>Envoie le montant par Wave ou Orange Money au responsable :</div>
+            <div className="numero">
+              <a href={'tel:' + caravane.numero_wave_responsable.replace(/\s/g, '')}>
+                {caravane.numero_wave_responsable}
+              </a>
+            </div>
+            <div>Le bureau confirmera ton paiement après vérification.</div>
+          </div>
+          <p className="aide">
+            Si tu ne peux plus venir, pense à te désister au moins 24 heures avant le départ, pour libérer ta place.
+          </p>
+          <div className="actions">
+            <button type="button" className="bouton bouton-plein" onClick={fermerModale}>
+              Fermer
+            </button>
+          </div>
+        </Modale>
+      )}
+
+      {modale === 'desistement-ok' && (
+        <Modale titre="Désistement confirmé" onFermer={fermerModale}>
+          <p className="message-ok">Ton inscription est annulée. Ta place est libérée.</p>
+          <div className="actions">
+            <button type="button" className="bouton bouton-plein" onClick={fermerModale}>
+              Fermer
+            </button>
+          </div>
+        </Modale>
       )}
     </article>
   )
@@ -245,12 +286,15 @@ export default function CaravanesPubliques() {
       <section className="section">
         <h2>Les caravanes de l’amicale</h2>
         <p className="intro">
-          Le bureau crée la caravane, et tu t’inscris toi-même ici. Tu paies par Wave au numéro du responsable,
-          et le bureau confirme ton paiement. Si tu ne peux plus venir, désiste-toi pour libérer ta place.
-          <br />
-          Règle : on ne peut plus se désister quand il reste moins de 24 heures avant le départ, pour ne pas
-          retarder la caravane.
+          Le bureau crée la caravane, et tu t’inscris toi-même ici. Tu paies par Wave ou Orange Money au numéro
+          du responsable, et le bureau confirme ton paiement. Si tu ne peux plus venir, désiste-toi pour libérer
+          ta place.
         </p>
+
+        <div className="banniere-avertissement">
+          <strong>À retenir : les désistements ferment 24 heures avant le départ.</strong> Un désistement de
+          dernière minute peut porter préjudice à la caravane et la retarder.
+        </div>
 
         {charge && <p className="chargement">Chargement des caravanes…</p>}
         {erreur && <p className="message-erreur">{erreur}</p>}
@@ -263,8 +307,7 @@ export default function CaravanesPubliques() {
           </p>
         )}
 
-        {!charge &&
-          caravanes.map((c) => <CarteCaravane key={c.id} caravane={c} recharger={charger} />)}
+        {!charge && caravanes.map((c) => <CarteCaravane key={c.id} caravane={c} recharger={charger} />)}
       </section>
     </div>
   )

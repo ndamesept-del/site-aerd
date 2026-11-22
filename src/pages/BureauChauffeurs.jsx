@@ -1,6 +1,57 @@
 import { useEffect, useState } from 'react'
 import { normaliserTelephone } from '../data.js'
 import { api } from '../api.js'
+import Modale from '../components/Modale.jsx'
+
+function FormulaireChauffeur({ onAjoute, onAnnuler }) {
+  const [envoi, setEnvoi] = useState(false)
+  const [erreur, setErreur] = useState('')
+  const [form, setForm] = useState({ prenom: '', nom: '', telephone: '' })
+
+  const changer = (cle) => (e) => setForm({ ...form, [cle]: e.target.value })
+
+  const ajouter = async (e) => {
+    e.preventDefault()
+    setErreur('')
+    setEnvoi(true)
+    try {
+      await api.ajouterChauffeur({ ...form, telephone: normaliserTelephone(form.telephone) })
+      onAjoute(form.prenom + ' ' + form.nom)
+    } catch (err) {
+      setErreur(err.message || 'Impossible d’ajouter ce chauffeur.')
+    } finally {
+      setEnvoi(false)
+    }
+  }
+
+  return (
+    <form className="formulaire" onSubmit={ajouter}>
+      {erreur && <p className="message-erreur">{erreur}</p>}
+      <div className="grille-champs">
+        <div className="champ">
+          <label htmlFor="c-prenom">Prénom</label>
+          <input id="c-prenom" value={form.prenom} onChange={changer('prenom')} required />
+        </div>
+        <div className="champ">
+          <label htmlFor="c-nom">Nom</label>
+          <input id="c-nom" value={form.nom} onChange={changer('nom')} required />
+        </div>
+        <div className="champ">
+          <label htmlFor="c-tel">Numéro de téléphone</label>
+          <input id="c-tel" type="tel" value={form.telephone} onChange={changer('telephone')} required />
+        </div>
+      </div>
+      <div className="actions">
+        <button type="submit" className="bouton bouton-plein" disabled={envoi}>
+          {envoi ? 'Ajout…' : 'Ajouter ce chauffeur'}
+        </button>
+        <button type="button" className="bouton bouton-secondaire bouton-plein" onClick={onAnnuler}>
+          Annuler
+        </button>
+      </div>
+    </form>
+  )
+}
 
 export default function BureauChauffeurs() {
   const [chauffeurs, setChauffeurs] = useState([])
@@ -8,9 +59,7 @@ export default function BureauChauffeurs() {
   const [charge, setCharge] = useState(true)
   const [erreur, setErreur] = useState('')
   const [message, setMessage] = useState('')
-  const [formulaireOuvert, setFormulaireOuvert] = useState(false)
-  const [envoi, setEnvoi] = useState(false)
-  const [form, setForm] = useState({ prenom: '', nom: '', telephone: '' })
+  const [modaleOuverte, setModaleOuverte] = useState(false)
 
   const charger = async (q = recherche) => {
     setErreur('')
@@ -35,24 +84,10 @@ export default function BureauChauffeurs() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recherche])
 
-  const changer = (cle) => (e) => setForm({ ...form, [cle]: e.target.value })
-
-  const ajouter = async (e) => {
-    e.preventDefault()
-    setErreur('')
-    setMessage('')
-    setEnvoi(true)
-    try {
-      await api.ajouterChauffeur({ ...form, telephone: normaliserTelephone(form.telephone) })
-      setMessage('Chauffeur ajouté : ' + form.prenom + ' ' + form.nom + '.')
-      setForm({ prenom: '', nom: '', telephone: '' })
-      setFormulaireOuvert(false)
-      charger(recherche)
-    } catch (err) {
-      setErreur(err.message || 'Impossible d’ajouter ce chauffeur.')
-    } finally {
-      setEnvoi(false)
-    }
+  const apresAjout = (nomComplet) => {
+    setMessage('Chauffeur ajouté : ' + nomComplet + '.')
+    setModaleOuverte(false)
+    charger(recherche)
   }
 
   return (
@@ -79,35 +114,16 @@ export default function BureauChauffeurs() {
       {message && <p className="message-ok">{message}</p>}
       {erreur && <p className="message-erreur">{erreur}</p>}
 
-      <button
-        type="button"
-        className="bouton bouton-bleu"
-        onClick={() => setFormulaireOuvert(!formulaireOuvert)}
-      >
-        {formulaireOuvert ? 'Fermer le formulaire' : 'Ajouter un chauffeur'}
-      </button>
+      <div className="actions">
+        <button type="button" className="bouton bouton-bleu" onClick={() => setModaleOuverte(true)}>
+          Ajouter un chauffeur
+        </button>
+      </div>
 
-      {formulaireOuvert && (
-        <form className="formulaire" onSubmit={ajouter}>
-          <h3>Nouveau chauffeur</h3>
-          <div className="grille-champs">
-            <div className="champ">
-              <label htmlFor="c-prenom">Prénom</label>
-              <input id="c-prenom" value={form.prenom} onChange={changer('prenom')} required />
-            </div>
-            <div className="champ">
-              <label htmlFor="c-nom">Nom</label>
-              <input id="c-nom" value={form.nom} onChange={changer('nom')} required />
-            </div>
-            <div className="champ">
-              <label htmlFor="c-tel">Numéro de téléphone</label>
-              <input id="c-tel" type="tel" value={form.telephone} onChange={changer('telephone')} required />
-            </div>
-          </div>
-          <button type="submit" className="bouton bouton-plein" disabled={envoi}>
-            {envoi ? 'Ajout…' : 'Ajouter ce chauffeur'}
-          </button>
-        </form>
+      {modaleOuverte && (
+        <Modale titre="Nouveau chauffeur" onFermer={() => setModaleOuverte(false)}>
+          <FormulaireChauffeur onAjoute={apresAjout} onAnnuler={() => setModaleOuverte(false)} />
+        </Modale>
       )}
 
       <div style={{ marginTop: 20 }}>

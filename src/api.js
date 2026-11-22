@@ -47,7 +47,10 @@ async function appelFonction(nom, { methode = 'GET', corps = null, auth = false,
     data = null
   }
   if (!res.ok || !data) {
-    const err = new Error((data && data.error) || 'Erreur du serveur (' + res.status + ')')
+    // Message avec « JSON » : en développement, une réponse qui n'est pas
+    // du JSON (ex : la page HTML renvoyée quand la fonction n'existe pas)
+    // déclenche le repli vers le mode local (voir appel() ci-dessous).
+    const err = new Error((data && data.error) || 'Réponse non JSON du serveur (' + res.status + ')')
     err.status = res.status
     throw err
   }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { formatDate, formatHeure, normaliserTelephone } from '../data.js'
 import { api } from '../api.js'
+import Modale from '../components/Modale.jsx'
 
 function badgeStatut(statut) {
   if (statut === 'payé') return <span className="badge badge-paye">Payé</span>
@@ -8,16 +9,9 @@ function badgeStatut(statut) {
   return <span className="badge badge-inscrit">Inscrit</span>
 }
 
-export default function BureauCaravanes() {
-  const [caravanes, setCaravanes] = useState([])
-  const [chauffeurs, setChauffeurs] = useState([])
-  const [charge, setCharge] = useState(true)
-  const [erreur, setErreur] = useState('')
-  const [message, setMessage] = useState('')
-  const [formulaireOuvert, setFormulaireOuvert] = useState(false)
+function FormulaireCaravane({ chauffeurs, onCree, onAnnuler }) {
   const [envoi, setEnvoi] = useState(false)
-  const [actionEnCours, setActionEnCours] = useState(null)
-
+  const [erreur, setErreur] = useState('')
   const [form, setForm] = useState({
     date_depart: '',
     heure_depart: '08:00',
@@ -29,6 +23,134 @@ export default function BureauCaravanes() {
     nc_nom: '',
     nc_telephone: ''
   })
+
+  const changer = (cle) => (e) => setForm({ ...form, [cle]: e.target.value })
+
+  const creer = async (e) => {
+    e.preventDefault()
+    setErreur('')
+    setEnvoi(true)
+    try {
+      const donnees = {
+        date_depart: form.date_depart,
+        heure_depart: form.heure_depart || '08:00',
+        destination: form.destination,
+        numero_wave_responsable: normaliserTelephone(form.numero_wave_responsable)
+      }
+      if (form.nouveau_chauffeur) {
+        donnees.nouveau_chauffeur = {
+          prenom: form.nc_prenom,
+          nom: form.nc_nom,
+          telephone: normaliserTelephone(form.nc_telephone)
+        }
+      } else if (form.chauffeur_id) {
+        donnees.chauffeur_id = Number(form.chauffeur_id)
+      }
+      await api.creerCaravane(donnees)
+      onCree(form.destination, form.date_depart, form.heure_depart)
+    } catch (err) {
+      setErreur(err.message || 'Impossible de créer cette caravane.')
+    } finally {
+      setEnvoi(false)
+    }
+  }
+
+  return (
+    <form className="formulaire" onSubmit={creer}>
+      {erreur && <p className="message-erreur">{erreur}</p>}
+      <div className="grille-champs">
+        <div className="champ">
+          <label htmlFor="car-date">Date de départ</label>
+          <input id="car-date" type="date" value={form.date_depart} onChange={changer('date_depart')} required />
+        </div>
+        <div className="champ">
+          <label htmlFor="car-heure">Heure de départ</label>
+          <input id="car-heure" type="time" value={form.heure_depart} onChange={changer('heure_depart')} required />
+          <p className="aide">Les désistements ferment 24 h avant cette heure.</p>
+        </div>
+        <div className="champ">
+          <label htmlFor="car-destination">Destination</label>
+          <input
+            id="car-destination"
+            value={form.destination}
+            onChange={changer('destination')}
+            placeholder="Ex : Diourbel"
+            required
+          />
+        </div>
+        <div className="champ">
+          <label htmlFor="car-wave">Numéro Wave du responsable (pour recevoir les paiements)</label>
+          <input
+            id="car-wave"
+            type="tel"
+            value={form.numero_wave_responsable}
+            onChange={changer('numero_wave_responsable')}
+            placeholder="Ex : 77 000 00 00"
+            required
+          />
+        </div>
+        <div className="champ">
+          <label htmlFor="car-chauffeur">Chauffeur</label>
+          <select
+            id="car-chauffeur"
+            value={form.nouveau_chauffeur ? 'nouveau' : form.chauffeur_id}
+            onChange={(e) => {
+              if (e.target.value === 'nouveau') setForm({ ...form, chauffeur_id: '', nouveau_chauffeur: true })
+              else if (e.target.value === '') setForm({ ...form, chauffeur_id: '', nouveau_chauffeur: false })
+              else setForm({ ...form, chauffeur_id: e.target.value, nouveau_chauffeur: false })
+            }}
+          >
+            <option value="">Pas encore désigné</option>
+            {chauffeurs.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.prenom} {c.nom} — {c.telephone}
+              </option>
+            ))}
+            <option value="nouveau">Nouveau chauffeur (pas dans l’annuaire)</option>
+          </select>
+          <p className="aide">Choisis un chauffeur de l’annuaire, ou ajoute-en un nouveau ici.</p>
+        </div>
+      </div>
+
+      {form.nouveau_chauffeur && (
+        <div className="grille-champs">
+          <div className="champ">
+            <label htmlFor="car-nc-prenom">Prénom du chauffeur</label>
+            <input id="car-nc-prenom" value={form.nc_prenom} onChange={changer('nc_prenom')} required />
+          </div>
+          <div className="champ">
+            <label htmlFor="car-nc-nom">Nom du chauffeur</label>
+            <input id="car-nc-nom" value={form.nc_nom} onChange={changer('nc_nom')} required />
+          </div>
+          <div className="champ">
+            <label htmlFor="car-nc-tel">Numéro du chauffeur</label>
+            <input id="car-nc-tel" type="tel" value={form.nc_telephone} onChange={changer('nc_telephone')} required />
+          </div>
+        </div>
+      )}
+
+      <div className="actions">
+        <button type="submit" className="bouton bouton-plein" disabled={envoi}>
+          {envoi ? 'Création…' : 'Créer cette caravane'}
+        </button>
+        <button type="button" className="bouton bouton-secondaire bouton-plein" onClick={onAnnuler}>
+          Annuler
+        </button>
+      </div>
+    </form>
+  )
+}
+
+export default function BureauCaravanes() {
+  const [caravanes, setCaravanes] = useState([])
+  const [chauffeurs, setChauffeurs] = useState([])
+  const [charge, setCharge] = useState(true)
+  const [erreur, setErreur] = useState('')
+  const [message, setMessage] = useState('')
+  const [modaleCreation, setModaleCreation] = useState(false)
+  const [actionEnCours, setActionEnCours] = useState(null)
+  // Confirmation en pop-up : { inscription, action: 'paye' | 'retirer' } ou null
+  const [aConfirmer, setAConfirmer] = useState(null)
 
   const charger = async () => {
     setErreur('')
@@ -50,52 +172,15 @@ export default function BureauCaravanes() {
     charger()
   }, [])
 
-  const changer = (cle) => (e) => setForm({ ...form, [cle]: e.target.value })
-
-  const creer = async (e) => {
-    e.preventDefault()
-    setErreur('')
-    setMessage('')
-    setEnvoi(true)
-    try {
-      const donnees = {
-        date_depart: form.date_depart,
-        heure_depart: form.heure_depart || '08:00',
-        destination: form.destination,
-        numero_wave_responsable: normaliserTelephone(form.numero_wave_responsable)
-      }
-      if (form.nouveau_chauffeur) {
-        donnees.nouveau_chauffeur = {
-          prenom: form.nc_prenom,
-          nom: form.nc_nom,
-          telephone: normaliserTelephone(form.nc_telephone)
-        }
-      } else if (form.chauffeur_id) {
-        donnees.chauffeur_id = Number(form.chauffeur_id)
-      }
-      await api.creerCaravane(donnees)
-      setMessage('Caravane créée : ' + form.destination + ', le ' + formatDate(form.date_depart) + ' à ' + formatHeure(form.heure_depart) + '.')
-      setForm({
-        date_depart: '',
-        heure_depart: '08:00',
-        destination: '',
-        numero_wave_responsable: '',
-        chauffeur_id: '',
-        nouveau_chauffeur: false,
-        nc_prenom: '',
-        nc_nom: '',
-        nc_telephone: ''
-      })
-      setFormulaireOuvert(false)
-      charger()
-    } catch (err) {
-      setErreur(err.message || 'Impossible de créer cette caravane.')
-    } finally {
-      setEnvoi(false)
-    }
+  const apresCreation = (destination, date_depart, heure_depart) => {
+    setMessage('Caravane créée : ' + destination + ', le ' + formatDate(date_depart) + ' à ' + formatHeure(heure_depart) + '.')
+    setModaleCreation(false)
+    charger()
   }
 
-  const agirSurInscription = async (inscription, action) => {
+  const confirmerAction = async () => {
+    if (!aConfirmer) return
+    const { inscription, action } = aConfirmer
     setErreur('')
     setMessage('')
     setActionEnCours(inscription.id + '-' + action)
@@ -107,9 +192,11 @@ export default function BureauCaravanes() {
         await api.retirerInscription(inscription.id)
         setMessage(inscription.prenom + ' ' + inscription.nom + ' a été retiré(e) de la caravane.')
       }
+      setAConfirmer(null)
       charger()
     } catch (err) {
       setErreur(err.message || 'Une erreur est survenue.')
+      setAConfirmer(null)
     } finally {
       setActionEnCours(null)
     }
@@ -120,100 +207,68 @@ export default function BureauCaravanes() {
       <h3>Caravanes</h3>
       <p>
         Crée la caravane ici : les membres s’inscrivent ensuite tout seuls sur le site public.
-        Quand un membre a payé par Wave, coche « Payé ». Si quelqu’un se désiste, retire-le de la liste.
-        <br />
-        Règle : les désistements ferment 24 heures avant le départ, pour ne pas retarder la caravane.
+        Quand un membre a payé par Wave ou Orange Money, coche « Payé ». Si quelqu’un se désiste,
+        retire-le de la liste.
       </p>
+
+      <div className="banniere-avertissement">
+        <strong>Règle : les désistements ferment 24 heures avant le départ,</strong> pour ne pas retarder
+        la caravane.
+      </div>
 
       {message && <p className="message-ok">{message}</p>}
       {erreur && <p className="message-erreur">{erreur}</p>}
 
-      <button
-        type="button"
-        className="bouton bouton-bleu"
-        onClick={() => setFormulaireOuvert(!formulaireOuvert)}
-      >
-        {formulaireOuvert ? 'Fermer le formulaire' : 'Créer une caravane'}
-      </button>
+      <div className="actions">
+        <button type="button" className="bouton bouton-bleu" onClick={() => setModaleCreation(true)}>
+          Créer une caravane
+        </button>
+      </div>
 
-      {formulaireOuvert && (
-        <form className="formulaire" onSubmit={creer}>
-          <h3>Nouvelle caravane</h3>
-          <div className="grille-champs">
-            <div className="champ">
-              <label htmlFor="car-date">Date de départ</label>
-              <input id="car-date" type="date" value={form.date_depart} onChange={changer('date_depart')} required />
-            </div>
-            <div className="champ">
-              <label htmlFor="car-heure">Heure de départ</label>
-              <input id="car-heure" type="time" value={form.heure_depart} onChange={changer('heure_depart')} required />
-              <p className="aide">Les désistements ferment 24 h avant cette heure.</p>
-            </div>
-            <div className="champ">
-              <label htmlFor="car-destination">Destination</label>
-              <input
-                id="car-destination"
-                value={form.destination}
-                onChange={changer('destination')}
-                placeholder="Ex : Diourbel"
-                required
-              />
-            </div>
-            <div className="champ">
-              <label htmlFor="car-wave">Numéro Wave du responsable (pour recevoir les paiements)</label>
-              <input
-                id="car-wave"
-                type="tel"
-                value={form.numero_wave_responsable}
-                onChange={changer('numero_wave_responsable')}
-                placeholder="Ex : 77 000 00 00"
-                required
-              />
-            </div>
-            <div className="champ">
-              <label htmlFor="car-chauffeur">Chauffeur</label>
-              <select
-                id="car-chauffeur"
-                value={form.nouveau_chauffeur ? 'nouveau' : form.chauffeur_id}
-                onChange={(e) => {
-                  if (e.target.value === 'nouveau') setForm({ ...form, chauffeur_id: '', nouveau_chauffeur: true })
-                  else if (e.target.value === '') setForm({ ...form, chauffeur_id: '', nouveau_chauffeur: false })
-                  else setForm({ ...form, chauffeur_id: e.target.value, nouveau_chauffeur: false })
-                }}
-              >
-                <option value="">Pas encore désigné</option>
-                {chauffeurs.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.prenom} {c.nom} — {c.telephone}
-                  </option>
-                ))}
-                <option value="nouveau">Nouveau chauffeur (pas dans l’annuaire)</option>
-              </select>
-              <p className="aide">Choisis un chauffeur de l’annuaire, ou ajoute-en un nouveau ici.</p>
-            </div>
-          </div>
+      {modaleCreation && (
+        <Modale titre="Nouvelle caravane" onFermer={() => setModaleCreation(false)}>
+          <FormulaireCaravane
+            chauffeurs={chauffeurs}
+            onCree={apresCreation}
+            onAnnuler={() => setModaleCreation(false)}
+          />
+        </Modale>
+      )}
 
-          {form.nouveau_chauffeur && (
-            <div className="grille-champs">
-              <div className="champ">
-                <label htmlFor="car-nc-prenom">Prénom du chauffeur</label>
-                <input id="car-nc-prenom" value={form.nc_prenom} onChange={changer('nc_prenom')} required />
-              </div>
-              <div className="champ">
-                <label htmlFor="car-nc-nom">Nom du chauffeur</label>
-                <input id="car-nc-nom" value={form.nc_nom} onChange={changer('nc_nom')} required />
-              </div>
-              <div className="champ">
-                <label htmlFor="car-nc-tel">Numéro du chauffeur</label>
-                <input id="car-nc-tel" type="tel" value={form.nc_telephone} onChange={changer('nc_telephone')} required />
-              </div>
-            </div>
+      {aConfirmer && (
+        <Modale
+          titre={aConfirmer.action === 'paye' ? 'Confirmer le paiement' : 'Retirer de la caravane'}
+          onFermer={() => setAConfirmer(null)}
+        >
+          {aConfirmer.action === 'paye' ? (
+            <p>
+              <strong>{aConfirmer.inscription.prenom} {aConfirmer.inscription.nom}</strong> a payé sa place
+              par Wave ou Orange Money ? Confirme seulement si tu as bien reçu l’argent.
+            </p>
+          ) : (
+            <p>
+              Retirer <strong>{aConfirmer.inscription.prenom} {aConfirmer.inscription.nom}</strong> de
+              la caravane ? Il ou elle ne sera plus inscrit(e).
+            </p>
           )}
-
-          <button type="submit" className="bouton bouton-plein" disabled={envoi}>
-            {envoi ? 'Création…' : 'Créer cette caravane'}
-          </button>
-        </form>
+          <div className="actions">
+            <button
+              type="button"
+              className={'bouton bouton-plein' + (aConfirmer.action === 'retirer' ? ' bouton-danger' : '')}
+              disabled={!!actionEnCours}
+              onClick={confirmerAction}
+            >
+              {actionEnCours ? 'Enregistrement…' : aConfirmer.action === 'paye' ? 'Oui, c’est payé' : 'Retirer'}
+            </button>
+            <button
+              type="button"
+              className="bouton bouton-secondaire bouton-plein"
+              onClick={() => setAConfirmer(null)}
+            >
+              Annuler
+            </button>
+          </div>
+        </Modale>
       )}
 
       <div style={{ marginTop: 20 }}>
@@ -275,7 +330,7 @@ export default function BureauCaravanes() {
                           type="button"
                           className="bouton-discret"
                           disabled={actionEnCours === i.id + '-paye'}
-                          onClick={() => agirSurInscription(i, 'paye')}
+                          onClick={() => setAConfirmer({ inscription: i, action: 'paye' })}
                         >
                           Marquer « Payé »
                         </button>
@@ -284,7 +339,7 @@ export default function BureauCaravanes() {
                         type="button"
                         className="bouton-discret bouton-danger"
                         disabled={actionEnCours === i.id + '-retirer'}
-                        onClick={() => agirSurInscription(i, 'retirer')}
+                        onClick={() => setAConfirmer({ inscription: i, action: 'retirer' })}
                       >
                         Retirer de la liste
                       </button>
@@ -292,7 +347,7 @@ export default function BureauCaravanes() {
                   </div>
                 ))}
                 {desistes.length > 0 && (
-                  <p className="details" style={{ color: '#4d5866', fontSize: 14 }}>
+                  <p className="details" style={{ color: '#4d5866', fontSize: 15 }}>
                     {desistes.length} désistement(s) :{' '}
                     {desistes.map((i) => i.prenom + ' ' + i.nom).join(', ')}.
                   </p>

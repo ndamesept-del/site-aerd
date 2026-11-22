@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api.js'
+import Modale from '../components/Modale.jsx'
 
 export default function BureauDashboard({ allerOnglet }) {
   const [stats, setStats] = useState(null)
@@ -7,6 +8,7 @@ export default function BureauDashboard({ allerOnglet }) {
   const [erreur, setErreur] = useState('')
   const [message, setMessage] = useState('')
   const [travail, setTravail] = useState(false)
+  const [confirmerSuppression, setConfirmerSuppression] = useState(false)
 
   const charger = async () => {
     try {
@@ -83,8 +85,8 @@ export default function BureauDashboard({ allerOnglet }) {
           Wave du responsable. Les membres s’inscrivent ensuite tout seuls sur le site.
         </li>
         <li>
-          <strong>Vérifie les paiements</strong> : quand un membre a payé par Wave, coche « Payé » sur son
-          inscription. Si quelqu’un se désiste, retire-le de la liste.
+          <strong>Vérifie les paiements</strong> : quand un membre a payé par Wave ou Orange Money, coche
+          « Payé » sur son inscription. Si quelqu’un se désiste, retire-le de la liste.
         </li>
       </ul>
 
@@ -112,12 +114,41 @@ export default function BureauDashboard({ allerOnglet }) {
             type="button"
             className="bouton-discret bouton-danger"
             disabled={travail}
-            onClick={() => gererExemples('supprimer')}
+            onClick={() => setConfirmerSuppression(true)}
           >
             Supprimer les exemples
           </button>
         </div>
       </div>
+
+      {confirmerSuppression && (
+        <Modale titre="Supprimer les exemples ?" onFermer={() => setConfirmerSuppression(false)}>
+          <p>
+            Toutes les données d’exemple (membres, chauffeur, caravane et inscriptions marqués « Exemple »)
+            seront supprimées. Les vraies données ne sont pas touchées.
+          </p>
+          <div className="actions">
+            <button
+              type="button"
+              className="bouton bouton-danger bouton-plein"
+              disabled={travail}
+              onClick={() => {
+                setConfirmerSuppression(false)
+                gererExemples('supprimer')
+              }}
+            >
+              {travail ? 'Suppression…' : 'Oui, supprimer les exemples'}
+            </button>
+            <button
+              type="button"
+              className="bouton bouton-secondaire bouton-plein"
+              onClick={() => setConfirmerSuppression(false)}
+            >
+              Annuler
+            </button>
+          </div>
+        </Modale>
+      )}
     </div>
   )
 }

@@ -1,16 +1,11 @@
 import { useEffect, useState } from 'react'
 import { FILIERES, NIVEAUX, ORIGINES, normaliserTelephone } from '../data.js'
 import { api } from '../api.js'
+import Modale from '../components/Modale.jsx'
 
-export default function BureauMembres() {
-  const [membres, setMembres] = useState([])
-  const [recherche, setRecherche] = useState('')
-  const [charge, setCharge] = useState(true)
-  const [erreur, setErreur] = useState('')
-  const [message, setMessage] = useState('')
-  const [formulaireOuvert, setFormulaireOuvert] = useState(false)
+function FormulaireMembre({ onAjoute, onAnnuler }) {
   const [envoi, setEnvoi] = useState(false)
-
+  const [erreur, setErreur] = useState('')
   const [form, setForm] = useState({
     prenom: '',
     nom: '',
@@ -20,6 +15,101 @@ export default function BureauMembres() {
     niveau: '',
     origine: ''
   })
+
+  const changer = (cle) => (e) => setForm({ ...form, [cle]: e.target.value })
+
+  const ajouter = async (e) => {
+    e.preventDefault()
+    setErreur('')
+    setEnvoi(true)
+    try {
+      await api.ajouterMembre({
+        ...form,
+        telephone: normaliserTelephone(form.telephone),
+        telephone_parent: normaliserTelephone(form.telephone_parent)
+      })
+      onAjoute(form.prenom + ' ' + form.nom)
+    } catch (err) {
+      setErreur(err.message || 'Impossible d’ajouter ce membre.')
+    } finally {
+      setEnvoi(false)
+    }
+  }
+
+  return (
+    <form className="formulaire" onSubmit={ajouter}>
+      {erreur && <p className="message-erreur">{erreur}</p>}
+      <div className="grille-champs">
+        <div className="champ">
+          <label htmlFor="m-prenom">Prénom</label>
+          <input id="m-prenom" value={form.prenom} onChange={changer('prenom')} required />
+        </div>
+        <div className="champ">
+          <label htmlFor="m-nom">Nom</label>
+          <input id="m-nom" value={form.nom} onChange={changer('nom')} required />
+        </div>
+        <div className="champ">
+          <label htmlFor="m-tel">Numéro de téléphone</label>
+          <input id="m-tel" type="tel" value={form.telephone} onChange={changer('telephone')} required />
+        </div>
+        <div className="champ">
+          <label htmlFor="m-tel-parent">Numéro de téléphone d’un parent (en cas d’urgence)</label>
+          <input id="m-tel-parent" type="tel" value={form.telephone_parent} onChange={changer('telephone_parent')} />
+          <p className="aide">Pour la commission sociale, si quelque chose arrive à l’étudiant.</p>
+        </div>
+        <div className="champ">
+          <label htmlFor="m-filiere">UFR ou département</label>
+          <select id="m-filiere" value={form.ufr_departement} onChange={changer('ufr_departement')} required>
+            <option value="">Choisir…</option>
+            {FILIERES.map((f) => (
+              <option key={f.court} value={f.court}>
+                {f.court} — {f.long}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="champ">
+          <label htmlFor="m-niveau">Niveau</label>
+          <select id="m-niveau" value={form.niveau} onChange={changer('niveau')} required>
+            <option value="">Choisir…</option>
+            {NIVEAUX.map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="champ">
+          <label htmlFor="m-origine">Origine</label>
+          <select id="m-origine" value={form.origine} onChange={changer('origine')} required>
+            <option value="">Choisir…</option>
+            {ORIGINES.map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div className="actions">
+        <button type="submit" className="bouton bouton-plein" disabled={envoi}>
+          {envoi ? 'Ajout…' : 'Ajouter ce membre'}
+        </button>
+        <button type="button" className="bouton bouton-secondaire bouton-plein" onClick={onAnnuler}>
+          Annuler
+        </button>
+      </div>
+    </form>
+  )
+}
+
+export default function BureauMembres() {
+  const [membres, setMembres] = useState([])
+  const [recherche, setRecherche] = useState('')
+  const [charge, setCharge] = useState(true)
+  const [erreur, setErreur] = useState('')
+  const [message, setMessage] = useState('')
+  const [modaleOuverte, setModaleOuverte] = useState(false)
 
   const charger = async (q = recherche) => {
     setErreur('')
@@ -45,28 +135,10 @@ export default function BureauMembres() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recherche])
 
-  const changer = (cle) => (e) => setForm({ ...form, [cle]: e.target.value })
-
-  const ajouter = async (e) => {
-    e.preventDefault()
-    setErreur('')
-    setMessage('')
-    setEnvoi(true)
-    try {
-      await api.ajouterMembre({
-        ...form,
-        telephone: normaliserTelephone(form.telephone),
-        telephone_parent: normaliserTelephone(form.telephone_parent)
-      })
-      setMessage('Membre ajouté : ' + form.prenom + ' ' + form.nom + '.')
-      setForm({ prenom: '', nom: '', telephone: '', telephone_parent: '', ufr_departement: '', niveau: '', origine: '' })
-      setFormulaireOuvert(false)
-      charger(recherche)
-    } catch (err) {
-      setErreur(err.message || 'Impossible d’ajouter ce membre.')
-    } finally {
-      setEnvoi(false)
-    }
+  const apresAjout = (nomComplet) => {
+    setMessage('Membre ajouté : ' + nomComplet + '.')
+    setModaleOuverte(false)
+    charger(recherche)
   }
 
   return (
@@ -74,7 +146,7 @@ export default function BureauMembres() {
       <h3>Membres de l’amicale</h3>
       <p>
         Tape les premières lettres d’un nom ou un numéro de téléphone pour retrouver un membre. Pour ajouter un
-        membre, utilise le formulaire ci-dessous.
+        membre, utilise le bouton ci-dessous.
       </p>
 
       <div className="recherche">
@@ -93,73 +165,16 @@ export default function BureauMembres() {
       {message && <p className="message-ok">{message}</p>}
       {erreur && <p className="message-erreur">{erreur}</p>}
 
-      <button
-        type="button"
-        className="bouton bouton-bleu"
-        onClick={() => setFormulaireOuvert(!formulaireOuvert)}
-      >
-        {formulaireOuvert ? 'Fermer le formulaire' : 'Ajouter un membre'}
-      </button>
+      <div className="actions">
+        <button type="button" className="bouton bouton-bleu" onClick={() => setModaleOuverte(true)}>
+          Ajouter un membre
+        </button>
+      </div>
 
-      {formulaireOuvert && (
-        <form className="formulaire" onSubmit={ajouter}>
-          <h3>Nouveau membre</h3>
-          <div className="grille-champs">
-            <div className="champ">
-              <label htmlFor="m-prenom">Prénom</label>
-              <input id="m-prenom" value={form.prenom} onChange={changer('prenom')} required />
-            </div>
-            <div className="champ">
-              <label htmlFor="m-nom">Nom</label>
-              <input id="m-nom" value={form.nom} onChange={changer('nom')} required />
-            </div>
-            <div className="champ">
-              <label htmlFor="m-tel">Numéro de téléphone</label>
-              <input id="m-tel" type="tel" value={form.telephone} onChange={changer('telephone')} required />
-            </div>
-            <div className="champ">
-              <label htmlFor="m-tel-parent">Numéro de téléphone d’un parent (en cas d’urgence)</label>
-              <input id="m-tel-parent" type="tel" value={form.telephone_parent} onChange={changer('telephone_parent')} />
-              <p className="aide">Pour la commission sociale, si quelque chose arrive à l’étudiant.</p>
-            </div>
-            <div className="champ">
-              <label htmlFor="m-filiere">UFR ou département</label>
-              <select id="m-filiere" value={form.ufr_departement} onChange={changer('ufr_departement')} required>
-                <option value="">Choisir…</option>
-                {FILIERES.map((f) => (
-                  <option key={f.court} value={f.court}>
-                    {f.court} — {f.long}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="champ">
-              <label htmlFor="m-niveau">Niveau</label>
-              <select id="m-niveau" value={form.niveau} onChange={changer('niveau')} required>
-                <option value="">Choisir…</option>
-                {NIVEAUX.map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="champ">
-              <label htmlFor="m-origine">Origine</label>
-              <select id="m-origine" value={form.origine} onChange={changer('origine')} required>
-                <option value="">Choisir…</option>
-                {ORIGINES.map((o) => (
-                  <option key={o} value={o}>
-                    {o}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <button type="submit" className="bouton bouton-plein" disabled={envoi}>
-            {envoi ? 'Ajout…' : 'Ajouter ce membre'}
-          </button>
-        </form>
+      {modaleOuverte && (
+        <Modale titre="Nouveau membre" onFermer={() => setModaleOuverte(false)}>
+          <FormulaireMembre onAjoute={apresAjout} onAnnuler={() => setModaleOuverte(false)} />
+        </Modale>
       )}
 
       <div style={{ marginTop: 20 }}>

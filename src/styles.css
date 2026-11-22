@@ -2,8 +2,10 @@
    Site AERD/UAM — Amicale des Étudiants Ressortissants de Diourbel
    Identité visuelle : bleu profond et or, tirés du logo.
    Fond clair, texte sombre, l'or seulement en accent.
-   Mobile-first : la base est pensée pour le téléphone (~360 px),
+   Mobile d'abord : la base est pensée pour le téléphone (~360 px),
    puis on élargit pour la tablette et l'ordinateur.
+   Les formulaires s'ouvrent en pop-ups (voir .modale-fond).
+   Polices système uniquement : le site reste autonome, sans CDN.
    ============================================================ */
 
 :root {
@@ -11,6 +13,7 @@
   --bleu-fonce: #0d2a52;
   --bleu-clair: #e3ecf8;
   --or: #c9a227;
+  --or-fonce: #a8871f;
   --or-clair: #f8f0cd;
   --or-bordure: #e3d199;
   --fond: #fbfaf6;
@@ -23,6 +26,8 @@
   --vert-fond: #e6f4ec;
   --rouge: #7a1f16;
   --rouge-fond: #fdecea;
+  --alerte-fond: #fff7d6;
+  --alerte-texte: #5c4a00;
 }
 
 * {
@@ -35,9 +40,9 @@ html {
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  font-size: 16px;
-  line-height: 1.55;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
   color: var(--texte);
   background: var(--fond);
 }
@@ -51,35 +56,40 @@ a {
   color: var(--bleu);
 }
 
+:focus-visible {
+  outline: 3px solid var(--or);
+  outline-offset: 2px;
+}
+
 h1,
 h2,
 h3 {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, "Times New Roman", serif;
   color: var(--bleu-fonce);
   line-height: 1.2;
-  margin: 0 0 10px;
+  margin: 0 0 12px;
 }
 
 h1 {
-  font-size: 32px;
+  font-size: 34px;
 }
 
 h2 {
-  font-size: 25px;
+  font-size: 27px;
 }
 
 h3 {
-  font-size: 20px;
+  font-size: 21px;
 }
 
 p {
-  margin: 0 0 12px;
+  margin: 0 0 14px;
 }
 
 .conteneur {
   max-width: 1080px;
   margin: 0 auto;
-  padding: 0 16px;
+  padding: 0 18px;
 }
 
 /* ---------- En-tête et navigation ---------- */
@@ -96,9 +106,9 @@ p {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 16px;
-  padding-top: 10px;
-  padding-bottom: 10px;
+  gap: 10px 16px;
+  padding-top: 12px;
+  padding-bottom: 12px;
 }
 
 .marque {
@@ -111,45 +121,48 @@ p {
 }
 
 .marque img {
-  width: 52px;
-  height: 52px;
+  width: 48px;
+  height: 48px;
   flex: 0 0 auto;
 }
 
 .marque .nom {
   display: block;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 20px;
+  font-family: "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, "Times New Roman", serif;
+  font-size: 21px;
   font-weight: 700;
   line-height: 1.1;
 }
 
 .marque .sous-titre {
   display: block;
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--texte-doux);
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
+/* Sur téléphone, la navigation est une rangée de pastilles bien
+   visibles, faciles à toucher ; sur ordinateur, elle est à droite. */
 .entete nav {
   display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
+  gap: 8px;
   width: 100%;
 }
 
 .entete nav button {
   flex: 1 1 auto;
-  min-height: 46px;
-  padding: 10px 12px;
-  font-size: 16px;
-  font-weight: 600;
+  min-width: 0;
+  min-height: 48px;
+  padding: 10px 6px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
   color: var(--bleu);
-  background: none;
-  border: none;
-  border-bottom: 3px solid transparent;
-  border-radius: 6px 6px 0 0;
+  background: var(--blanc);
+  border: 1px solid var(--bordure-champ);
+  border-radius: 999px;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .entete nav button:hover {
@@ -157,16 +170,18 @@ p {
 }
 
 .entete nav button.actif {
-  border-bottom-color: var(--or);
+  background: var(--bleu);
+  border-color: var(--bleu);
+  color: #fff;
 }
 
 /* Bandeau du mode local (développement seulement) */
 .bandeau-local {
-  background: #fff7d6;
-  color: #5c4a00;
+  background: var(--alerte-fond);
+  color: var(--alerte-texte);
   border-bottom: 1px solid var(--or-bordure);
-  padding: 9px 0;
-  font-size: 14px;
+  padding: 10px 0;
+  font-size: 15px;
 }
 
 /* ---------- Boutons ---------- */
@@ -175,22 +190,23 @@ p {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 50px;
-  padding: 12px 22px;
-  font-size: 16px;
+  min-height: 52px;
+  padding: 13px 24px;
+  font-size: 17px;
   font-weight: 700;
+  font-family: inherit;
   line-height: 1.3;
   text-decoration: none;
   color: #1c2430;
   background: var(--or);
   border: 2px solid var(--or);
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
 }
 
 .bouton:hover {
-  background: #b8931f;
-  border-color: #b8931f;
+  background: var(--or-fonce);
+  border-color: var(--or-fonce);
 }
 
 .bouton:disabled {
@@ -221,19 +237,25 @@ p {
 }
 
 .bouton-discret {
-  min-height: 44px;
-  padding: 8px 14px;
-  font-size: 15px;
-  font-weight: 600;
+  min-height: 48px;
+  padding: 10px 16px;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: inherit;
   color: var(--bleu);
   background: var(--blanc);
   border: 1px solid var(--bordure-champ);
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
 }
 
 .bouton-discret:hover {
   background: var(--bleu-clair);
+}
+
+.bouton-discret:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 
 .bouton-danger {
@@ -252,7 +274,7 @@ p {
 /* ---------- Accueil ---------- */
 
 .hero {
-  padding: 36px 0 30px;
+  padding: 40px 0 34px;
 }
 
 .hero h1 {
@@ -260,7 +282,7 @@ p {
 }
 
 .hero .chapeau {
-  font-size: 18px;
+  font-size: 19px;
   color: #33404f;
   max-width: 660px;
 }
@@ -270,19 +292,23 @@ p {
   height: 4px;
   background: var(--or);
   border: none;
-  margin: 0 0 16px;
+  margin: 0 0 18px;
 }
 
 .actions {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-top: 22px;
+  margin-top: 24px;
+}
+
+.actions .bouton {
+  width: 100%;
 }
 
 .faits {
-  margin-top: 22px;
-  font-size: 15px;
+  margin-top: 24px;
+  font-size: 16px;
   color: var(--texte-doux);
 }
 
@@ -291,7 +317,7 @@ p {
 }
 
 .section {
-  padding: 34px 0;
+  padding: 40px 0;
 }
 
 .section + .section {
@@ -299,19 +325,20 @@ p {
 }
 
 .section .intro {
+  font-size: 17px;
   color: var(--texte-doux);
   max-width: 680px;
 }
 
 .liste-simple {
   list-style: none;
-  margin: 18px 0 0;
+  margin: 20px 0 0;
   padding: 0;
 }
 
 .liste-simple li {
   position: relative;
-  padding: 0 0 14px 28px;
+  padding: 0 0 16px 30px;
   max-width: 720px;
 }
 
@@ -319,7 +346,7 @@ p {
   content: "";
   position: absolute;
   left: 0;
-  top: 9px;
+  top: 10px;
   width: 12px;
   height: 12px;
   background: var(--or);
@@ -330,13 +357,13 @@ p {
   grid-template-columns: 1fr;
   gap: 4px 32px;
   list-style: none;
-  margin: 18px 0 0;
+  margin: 20px 0 0;
   padding: 0;
 }
 
 .filieres li {
   position: relative;
-  padding: 8px 0 8px 28px;
+  padding: 10px 0 10px 30px;
   border-bottom: 1px solid #efe9d6;
 }
 
@@ -344,7 +371,7 @@ p {
   content: "";
   position: absolute;
   left: 0;
-  top: 16px;
+  top: 18px;
   width: 12px;
   height: 12px;
   background: var(--or);
@@ -355,8 +382,8 @@ p {
 }
 
 .niveaux {
-  margin-top: 18px;
-  font-size: 17px;
+  margin-top: 20px;
+  font-size: 18px;
 }
 
 .niveaux strong {
@@ -368,9 +395,9 @@ p {
 .carte {
   background: var(--blanc);
   border: 1px solid var(--bordure);
-  border-radius: 10px;
-  padding: 18px;
-  margin-bottom: 16px;
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 18px;
 }
 
 .carte-caravane {
@@ -383,11 +410,11 @@ p {
 
 .carte-caravane .date {
   color: var(--texte-doux);
-  font-size: 15px;
+  font-size: 16px;
 }
 
 .ligne {
-  margin: 6px 0;
+  margin: 8px 0;
 }
 
 .ligne .etiquette {
@@ -398,27 +425,33 @@ p {
 .compteurs {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px 22px;
-  margin: 10px 0 4px;
-  font-size: 15px;
+  gap: 8px;
+  margin: 14px 0 6px;
+  font-size: 16px;
   color: var(--texte-doux);
+}
+
+.compteurs span {
+  background: var(--bleu-clair);
+  border-radius: 999px;
+  padding: 5px 13px;
 }
 
 .compteurs strong {
   color: var(--bleu-fonce);
-  font-size: 17px;
+  font-size: 18px;
 }
 
 .encart-wave {
   background: var(--or-clair);
   border: 1px solid var(--or-bordure);
-  border-radius: 8px;
-  padding: 12px 14px;
-  margin: 12px 0;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin: 14px 0;
 }
 
 .encart-wave .numero {
-  font-size: 19px;
+  font-size: 21px;
   font-weight: 800;
   color: var(--bleu-fonce);
   letter-spacing: 0.5px;
@@ -429,47 +462,76 @@ p {
   text-decoration: none;
 }
 
+/* Bannière d'avertissement : l'information à ne pas rater,
+   en particulier la règle des 24 heures avant le départ. */
+.banniere-avertissement {
+  background: var(--alerte-fond);
+  border: 2px solid var(--or);
+  border-left: 6px solid var(--or);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin: 0 0 18px;
+  color: var(--alerte-texte);
+  font-size: 16px;
+}
+
+.banniere-avertissement strong {
+  color: var(--bleu-fonce);
+}
+
+/* Bannière rouge : les désistements sont déjà fermés. */
+.banniere-ferme {
+  background: var(--rouge-fond);
+  border: 2px solid #e0a49e;
+  border-left: 6px solid var(--rouge);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin: 14px 0;
+  color: var(--rouge);
+  font-size: 16px;
+}
+
 .vide {
   color: var(--texte-doux);
   background: var(--blanc);
   border: 1px dashed var(--bordure-champ);
-  border-radius: 10px;
-  padding: 22px 18px;
+  border-radius: 14px;
+  padding: 24px 18px;
   text-align: center;
 }
 
 .rangee {
   background: var(--blanc);
   border: 1px solid var(--bordure);
-  border-radius: 10px;
-  padding: 14px 16px;
-  margin-bottom: 10px;
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 12px;
 }
 
 .rangee .nom {
   font-weight: 700;
-  font-size: 17px;
+  font-size: 18px;
   color: var(--bleu-fonce);
 }
 
 .rangee .details {
   color: var(--texte-doux);
-  font-size: 15px;
-  margin-top: 2px;
+  font-size: 16px;
+  margin-top: 3px;
 }
 
 .rangee .actions-ligne {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  margin-top: 12px;
+  margin-top: 14px;
 }
 
 .badge {
   display: inline-block;
-  padding: 3px 10px;
+  padding: 3px 11px;
   border-radius: 999px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -509,13 +571,13 @@ p {
 }
 
 .champ {
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .champ label {
   display: block;
-  font-weight: 600;
-  font-size: 15px;
+  font-weight: 700;
+  font-size: 16px;
   margin-bottom: 6px;
 }
 
@@ -523,11 +585,12 @@ p {
 .champ select,
 .champ textarea {
   width: 100%;
-  font-size: 16px;
+  min-height: 52px;
+  font-size: 17px;
   font-family: inherit;
-  padding: 12px;
+  padding: 13px 14px;
   border: 1px solid var(--bordure-champ);
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--blanc);
   color: var(--texte);
 }
@@ -540,9 +603,9 @@ p {
 }
 
 .champ .aide {
-  font-size: 13.5px;
+  font-size: 14.5px;
   color: var(--texte-doux);
-  margin-top: 4px;
+  margin-top: 5px;
 }
 
 .grille-champs {
@@ -551,33 +614,96 @@ p {
   gap: 0;
 }
 
+/* ---------- Pop-ups (modales) ---------- */
+
+.modale-fond {
+  position: fixed;
+  inset: 0;
+  background: rgba(13, 42, 82, 0.55);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.modale {
+  background: var(--blanc);
+  width: 100%;
+  max-height: 92vh;
+  overflow-y: auto;
+  border-radius: 18px 18px 0 0;
+  padding: 18px 18px 26px;
+}
+
+.modale-entete {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.modale-entete h3 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.modale-fermer {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  font-size: 28px;
+  line-height: 1;
+  font-family: inherit;
+  color: var(--bleu-fonce);
+  background: var(--blanc);
+  border: 1px solid var(--bordure-champ);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.modale-fermer:hover {
+  background: var(--bleu-clair);
+}
+
+/* Dans une pop-up, le formulaire n'a plus besoin de son propre cadre. */
+.modale .formulaire {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.modale .actions {
+  margin-top: 20px;
+}
+
 /* ---------- Messages ---------- */
 
 .message-ok {
   background: var(--vert-fond);
   border: 1px solid #9fd0b2;
   color: var(--vert);
-  padding: 12px 14px;
-  border-radius: 8px;
-  margin: 12px 0;
+  padding: 13px 15px;
+  border-radius: 10px;
+  margin: 14px 0;
 }
 
 .message-erreur {
   background: var(--rouge-fond);
   border: 1px solid #f0b6b0;
   color: var(--rouge);
-  padding: 12px 14px;
-  border-radius: 8px;
-  margin: 12px 0;
+  padding: 13px 15px;
+  border-radius: 10px;
+  margin: 14px 0;
 }
 
 .message-info {
   background: var(--bleu-clair);
   border: 1px solid #b7cbe6;
   color: var(--bleu-fonce);
-  padding: 12px 14px;
-  border-radius: 8px;
-  margin: 12px 0;
+  padding: 13px 15px;
+  border-radius: 10px;
+  margin: 14px 0;
 }
 
 .chargement {
@@ -587,23 +713,35 @@ p {
 
 /* ---------- Bureau ---------- */
 
+/* Sur téléphone, les onglets sont une rangée de pastilles qui défile
+   horizontalement, au lieu de gros blocs qui prennent toute la page. */
 .onglets-bureau {
   display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin: 18px 0 22px;
+  gap: 8px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  margin: 18px -18px 24px;
+  padding: 0 18px 6px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .onglets-bureau button {
-  min-height: 46px;
-  padding: 10px 14px;
-  font-size: 15px;
-  font-weight: 600;
+  flex: 0 0 auto;
+  min-height: 48px;
+  padding: 10px 18px;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: inherit;
+  white-space: nowrap;
   color: var(--bleu);
   background: var(--blanc);
   border: 1px solid var(--bordure-champ);
-  border-radius: 8px;
+  border-radius: 999px;
   cursor: pointer;
+}
+
+.onglets-bureau button:hover {
+  background: var(--bleu-clair);
 }
 
 .onglets-bureau button.actif {
@@ -616,20 +754,20 @@ p {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
-  margin: 16px 0 24px;
+  margin: 18px 0 26px;
 }
 
 .stat {
   background: var(--blanc);
   border: 1px solid var(--bordure);
   border-top: 4px solid var(--bleu);
-  border-radius: 10px;
-  padding: 16px;
+  border-radius: 12px;
+  padding: 18px;
 }
 
 .stat .nombre {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 32px;
+  font-family: "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, "Times New Roman", serif;
+  font-size: 36px;
   font-weight: 700;
   color: var(--bleu-fonce);
   line-height: 1.1;
@@ -637,7 +775,7 @@ p {
 
 .stat .libelle {
   color: var(--texte-doux);
-  font-size: 15px;
+  font-size: 16px;
 }
 
 .carte-connexion {
@@ -646,15 +784,17 @@ p {
 }
 
 .recherche {
-  margin: 0 0 16px;
+  margin: 0 0 18px;
 }
 
 .recherche input {
   width: 100%;
-  font-size: 16px;
+  min-height: 52px;
+  font-size: 17px;
+  font-family: inherit;
   padding: 13px 14px;
   border: 1px solid var(--bordure-champ);
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 .barre-bureau {
@@ -671,20 +811,20 @@ p {
 .pied {
   background: var(--bleu-fonce);
   color: #dbe6f5;
-  padding: 34px 0;
-  margin-top: 48px;
+  padding: 36px 0;
+  margin-top: 52px;
 }
 
 .pied .nom {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 19px;
+  font-family: "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, "Times New Roman", serif;
+  font-size: 20px;
   font-weight: 700;
   color: #fff;
   margin-bottom: 6px;
 }
 
 .pied p {
-  font-size: 15px;
+  font-size: 16px;
   margin-bottom: 8px;
 }
 
@@ -696,11 +836,11 @@ p {
 
 @media (min-width: 720px) {
   h1 {
-    font-size: 40px;
+    font-size: 42px;
   }
 
   h2 {
-    font-size: 29px;
+    font-size: 30px;
   }
 
   .entete nav {
@@ -710,6 +850,8 @@ p {
 
   .entete nav button {
     flex: 0 0 auto;
+    padding: 10px 18px;
+    font-size: 16px;
   }
 
   .actions {
@@ -734,11 +876,30 @@ p {
   }
 
   .hero {
-    padding: 52px 0 40px;
+    padding: 56px 0 44px;
   }
 
   .section {
-    padding: 44px 0;
+    padding: 48px 0;
+  }
+
+  .onglets-bureau {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    margin: 18px 0 24px;
+    padding: 0;
+  }
+
+  /* Pop-up centrée sur ordinateur, au lieu d'arriver par le bas. */
+  .modale-fond {
+    align-items: center;
+    padding: 24px;
+  }
+
+  .modale {
+    max-width: 560px;
+    border-radius: 16px;
+    padding: 24px 24px 28px;
   }
 }
 
