@@ -42,9 +42,7 @@ export default function Accueil({ aller }) {
             Les étudiants de <span className="souligne-or">Diourbel et de Bambey</span>, réunis à l’UAM.
           </h1>
           <p className="chapeau">
-            L’amicale accueille les nouveaux bacheliers de Diourbel et de Bambey à l’Université Amadou Mahtar Mbow,
-            à Diamniadio. On vous aide à trouver vos repères sur le campus, et on organise ensemble les caravanes
-            de retour au pays.
+            On accueille les nouveaux bacheliers de Diourbel et de Bambey à l’UAM, et on organise les caravanes de retour au pays.
           </p>
           <div className="actions">
             <button type="button" className="bouton" onClick={() => aller('caravanes')}>
@@ -64,32 +62,28 @@ export default function Accueil({ aller }) {
         <div className="conteneur">
           <h2>Ce que fait l’amicale</h2>
           <p className="intro">
-            L’amicale, c’est un réseau d’entraide entre les étudiants originaires de Diourbel et de Bambey
-            qui étudient à l’UAM. Le bureau est élu par les membres, et tout le travail est bénévole.
+            Un réseau d’entraide entre étudiants de Diourbel et de Bambey. Tout le travail est bénévole.
           </p>
           <div className="cartes-fonctions">
             <article className="carte-fonction">
               <span className="numero-fonction" aria-hidden="true">1</span>
-              <h3>Accueillir les nouveaux bacheliers</h3>
+              <h3>Accueillir</h3>
               <p>
-                Orientation, parrainage par les anciens, informations pratiques dès l’arrivée à Diamniadio :
-                filière, logement, repères sur le campus.
+                Orientation, parrainage par les anciens et conseils pratiques dès l’arrivée.
               </p>
             </article>
             <article className="carte-fonction">
               <span className="numero-fonction" aria-hidden="true">2</span>
               <h3>Organiser les caravanes</h3>
               <p>
-                Des départs groupés vers Diourbel et Bambey, avec une liste d’inscrits et un suivi des
-                paiements, pour que personne ne soit oublié et que l’argent soit clair.
+                Départs groupés vers Diourbel et Bambey, avec liste d’inscrits et suivi des paiements.
               </p>
             </article>
             <article className="carte-fonction">
               <span className="numero-fonction" aria-hidden="true">3</span>
-              <h3>Garder le lien entre les générations</h3>
+              <h3>Garder le lien</h3>
               <p>
-                L’annuaire des chauffeurs permet aux futurs responsables de retrouver facilement les
-                chauffeurs déjà utilisés par les anciens.
+                Un annuaire des chauffeurs transmis d’un bureau à l’autre.
               </p>
             </article>
           </div>
@@ -102,8 +96,7 @@ export default function Accueil({ aller }) {
           {charge && <p className="chargement">Chargement…</p>}
           {!charge && !prochaine && (
             <p className="intro">
-              Aucune caravane n’est programmée pour le moment. Les prochaines dates seront annoncées ici
-              par le bureau de l’amicale.
+              Aucune caravane programmée pour le moment.
             </p>
           )}
           {!charge && prochaine && (
@@ -146,8 +139,7 @@ export default function Accueil({ aller }) {
             {bureau.length > 0 && (
               <>
                 <p className="intro">
-                  Ce sont eux qui font vivre l’amicale : ils accueillent les nouveaux, organisent les
-                  caravanes et répondent à tes questions.
+                  Ils accueillent les nouveaux et organisent les caravanes.
                 </p>
                 <div className="grille-bureau">
                   {bureau.map((m) => (
@@ -172,8 +164,7 @@ export default function Accueil({ aller }) {
               <div className="section-anciens">
                 <h3>Anciens membres du bureau</h3>
                 <p className="intro">
-                  Ils ont dirigé l’amicale avant le bureau actuel. Leurs noms et leurs postes restent
-                  affichés ici, sans photo.
+                  Ils ont dirigé l’amicale avant le bureau actuel.
                 </p>
                 <ul className="liste-simple">
                   {anciens.map((m) => (
@@ -195,9 +186,7 @@ export default function Accueil({ aller }) {
         <div className="conteneur">
           <h2>Présents dans chaque filière de l’UAM</h2>
           <p className="intro">
-            Que vous soyez en licence ou en master, l’amicale vous accueille. Chaque membre est enregistré
-            avec sa filière et son niveau, pour mieux vous orienter et vous mettre en relation avec les
-            étudiants de votre parcours.
+            En licence ou en master, dans toutes les filières.
           </p>
           <ul className="filieres">
             {FILIERES.map((f) => (
@@ -217,8 +206,7 @@ export default function Accueil({ aller }) {
           <div className="cta">
             <h2>Devenir membre</h2>
             <p className="intro">
-              Pour rejoindre l’amicale, remplis le formulaire d’inscription. Le bureau vérifie tes informations
-              et t’ajoute à la liste des membres. Tes informations restent dans l’amicale.
+              Remplis le formulaire : le bureau t’ajoute à la liste des membres.
             </p>
             <a className="bouton" href={FORMULAIRE_INSCRIPTION} target="_blank" rel="noreferrer">
               Rejoindre l’amicale

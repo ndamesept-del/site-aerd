@@ -108,8 +108,7 @@ export default function App() {
         <div className="conteneur">
           <p className="nom">AERD / UAM</p>
           <p>
-            Amicale des Étudiants Ressortissants de Diourbel, à l’Université Amadou Mahtar Mbow de Diamniadio.
-            Les étudiants de Diourbel et de Bambey, de la L1 au master.
+            Amicale des Étudiants Ressortissants de Diourbel, à l’UAM de Diamniadio.
           </p>
           <p>
             <a
@@ -121,7 +120,7 @@ export default function App() {
             >
               Espace bureau
             </a>{' '}
-            — réservé aux membres du bureau de l’amicale.
+            — réservé au bureau.
           </p>
           <p className="pied-liens">
             <a

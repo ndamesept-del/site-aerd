@@ -354,14 +354,11 @@ export default function CaravanesPubliques() {
       <section className="section">
         <h2>Les caravanes de l’amicale</h2>
         <p className="intro">
-          Le bureau crée la caravane, et tu t’inscris toi-même ici. Tu paies par Wave ou Orange Money au numéro
-          du responsable, et le bureau confirme ton paiement. Si tu ne peux plus venir, désiste-toi pour libérer
-          ta place.
+          Inscris-toi, paie par Wave ou Orange Money, le bureau confirme.
         </p>
 
         <div className="banniere-avertissement">
-          <strong>À retenir : les désistements ferment 24 heures avant le départ.</strong> Un désistement de
-          dernière minute peut porter préjudice à la caravane et la retarder.
+          <strong>Désistements fermés 24 heures avant le départ.</strong>
         </div>
 
         {charge && <p className="chargement">Chargement des caravanes…</p>}
