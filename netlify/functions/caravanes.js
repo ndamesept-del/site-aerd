@@ -1,0 +1,111 @@
+// Caravanes.
+//
+// GET  /.netlify/functions/caravanes
+//   Public : les caravanes à venir, avec chauffeur, compteurs d'inscrits et de payés.
+//   Avec ?details=1 et un jeton bureau : toutes les caravanes, avec la liste des inscriptions.
+// POST /.netlify/functions/caravanes  (bureau)
+//   Créer une caravane : { date_depart, destination, numero_wave_responsable,
+//   chauffeur_id? , nouveau_chauffeur? { prenom, nom, telephone } }
+import { getPool, reponse, erreur, pasDeBase, lireCorps, nettoyerTexte } from './db.js'
+import { jetonValide, nonAutorise } from './auth.js'
+
+function avecChauffeur(ligne) {
+  return {
+    id: ligne.id,
+    date_depart: ligne.date_depart,
+    heure_depart: ligne.heure_depart,
+    destination: ligne.destination,
+    numero_wave_responsable: ligne.numero_wave_responsable,
+    exemple: !!ligne.exemple,
+    chauffeur: ligne.chauffeur_id
+      ? { prenom: ligne.ch_prenom, nom: ligne.ch_nom, telephone: ligne.ch_telephone }
+      : null
+  }
+}
+
+export async function handler(event) {
+  const pool = getPool()
+  if (!pool) return pasDeBase()
+
+  if (event.httpMethod === 'GET') {
+    const details = event.queryStringParameters?.details === '1'
+    if (details && !jetonValide(event)) return nonAutorise()
+    try {
+      if (details) {
+        const res = await pool.query(
+          `SELECT c.*, ch.prenom AS ch_prenom, ch.nom AS ch_nom, ch.telephone AS ch_telephone
+           FROM caravanes c LEFT JOIN chauffeurs ch ON ch.id = c.chauffeur_id
+           ORDER BY c.date_depart DESC`
+        )
+        const caravanes = []
+        for (const ligne of res.rows) {
+          const ins = await pool.query(
+            `SELECT id, prenom, nom, telephone, statut, exemple
+             FROM inscriptions WHERE caravane_id = $1 ORDER BY created_at ASC`,
+            [ligne.id]
+          )
+          caravanes.push({ ...avecChauffeur(ligne), inscriptions: ins.rows })
+        }
+        return reponse(200, { caravanes })
+      }
+      const res = await pool.query(
+        `SELECT c.*, ch.prenom AS ch_prenom, ch.nom AS ch_nom, ch.telephone AS ch_telephone,
+                COUNT(i.id) FILTER (WHERE i.statut <> 'désisté') AS inscrits,
+                COUNT(i.id) FILTER (WHERE i.statut = 'payé') AS payes
+         FROM caravanes c
+         LEFT JOIN chauffeurs ch ON ch.id = c.chauffeur_id
+         LEFT JOIN inscriptions i ON i.caravane_id = c.id
+         WHERE c.date_depart >= CURRENT_DATE
+         GROUP BY c.id, ch.prenom, ch.nom, ch.telephone
+         ORDER BY c.date_depart ASC`
+      )
+      return reponse(200, {
+        caravanes: res.rows.map((ligne) => ({
+          ...avecChauffeur(ligne),
+          inscrits: Number(ligne.inscrits),
+          payes: Number(ligne.payes)
+        }))
+      })
+    } catch (e) {
+      console.error(e)
+      return erreur('Impossible de charger les caravanes.')
+    }
+  }
+
+  if (event.httpMethod === 'POST') {
+    if (!jetonValide(event)) return nonAutorise()
+    const corps = lireCorps(event)
+    const date_depart = nettoyerTexte(corps.date_depart)
+    const heure_depart = /^\d{2}:\d{2}$/.test(String(corps.heure_depart || '')) ? corps.heure_depart : '08:00'
+    const destination = nettoyerTexte(corps.destination)
+    const numero_wave = nettoyerTexte(corps.numero_wave_responsable)
+    if (!date_depart || !destination || !numero_wave) {
+      return erreur('Date, destination et numéro Wave sont obligatoires.', 400)
+    }
+    try {
+      let chauffeur_id = corps.chauffeur_id ? Number(corps.chauffeur_id) : null
+      if (corps.nouveau_chauffeur && nettoyerTexte(corps.nouveau_chauffeur.nom)) {
+        const nc = corps.nouveau_chauffeur
+        if (!nettoyerTexte(nc.prenom) || !nettoyerTexte(nc.telephone)) {
+          return erreur('Prénom et numéro du nouveau chauffeur sont obligatoires.', 400)
+        }
+        const ins = await pool.query(
+          'INSERT INTO chauffeurs (prenom, nom, telephone) VALUES ($1, $2, $3) RETURNING id',
+          [nettoyerTexte(nc.prenom), nettoyerTexte(nc.nom), nettoyerTexte(nc.telephone)]
+        )
+        chauffeur_id = ins.rows[0].id
+      }
+      const res = await pool.query(
+        `INSERT INTO caravanes (date_depart, heure_depart, destination, chauffeur_id, numero_wave_responsable)
+         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        [date_depart, heure_depart, destination, chauffeur_id, numero_wave]
+      )
+      return reponse(201, { caravane_id: res.rows[0].id })
+    } catch (e) {
+      console.error(e)
+      return erreur('Impossible de créer cette caravane.')
+    }
+  }
+
+  return erreur('Méthode non autorisée.', 405)
+}

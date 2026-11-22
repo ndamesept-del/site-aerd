@@ -1,0 +1,306 @@
+import { useEffect, useState } from 'react'
+import { formatDate, formatHeure, normaliserTelephone } from '../data.js'
+import { api } from '../api.js'
+
+function badgeStatut(statut) {
+  if (statut === 'payé') return <span className="badge badge-paye">Payé</span>
+  if (statut === 'désisté') return <span className="badge badge-desiste">Désisté</span>
+  return <span className="badge badge-inscrit">Inscrit</span>
+}
+
+export default function BureauCaravanes() {
+  const [caravanes, setCaravanes] = useState([])
+  const [chauffeurs, setChauffeurs] = useState([])
+  const [charge, setCharge] = useState(true)
+  const [erreur, setErreur] = useState('')
+  const [message, setMessage] = useState('')
+  const [formulaireOuvert, setFormulaireOuvert] = useState(false)
+  const [envoi, setEnvoi] = useState(false)
+  const [actionEnCours, setActionEnCours] = useState(null)
+
+  const [form, setForm] = useState({
+    date_depart: '',
+    heure_depart: '08:00',
+    destination: '',
+    numero_wave_responsable: '',
+    chauffeur_id: '',
+    nouveau_chauffeur: false,
+    nc_prenom: '',
+    nc_nom: '',
+    nc_telephone: ''
+  })
+
+  const charger = async () => {
+    setErreur('')
+    try {
+      const [dataCaravanes, dataChauffeurs] = await Promise.all([
+        api.caravanesBureau(),
+        api.chauffeurs('')
+      ])
+      setCaravanes(dataCaravanes.caravanes || [])
+      setChauffeurs(dataChauffeurs.chauffeurs || [])
+    } catch (err) {
+      setErreur(err.message || 'Impossible de charger les caravanes.')
+    } finally {
+      setCharge(false)
+    }
+  }
+
+  useEffect(() => {
+    charger()
+  }, [])
+
+  const changer = (cle) => (e) => setForm({ ...form, [cle]: e.target.value })
+
+  const creer = async (e) => {
+    e.preventDefault()
+    setErreur('')
+    setMessage('')
+    setEnvoi(true)
+    try {
+      const donnees = {
+        date_depart: form.date_depart,
+        heure_depart: form.heure_depart || '08:00',
+        destination: form.destination,
+        numero_wave_responsable: normaliserTelephone(form.numero_wave_responsable)
+      }
+      if (form.nouveau_chauffeur) {
+        donnees.nouveau_chauffeur = {
+          prenom: form.nc_prenom,
+          nom: form.nc_nom,
+          telephone: normaliserTelephone(form.nc_telephone)
+        }
+      } else if (form.chauffeur_id) {
+        donnees.chauffeur_id = Number(form.chauffeur_id)
+      }
+      await api.creerCaravane(donnees)
+      setMessage('Caravane créée : ' + form.destination + ', le ' + formatDate(form.date_depart) + ' à ' + formatHeure(form.heure_depart) + '.')
+      setForm({
+        date_depart: '',
+        heure_depart: '08:00',
+        destination: '',
+        numero_wave_responsable: '',
+        chauffeur_id: '',
+        nouveau_chauffeur: false,
+        nc_prenom: '',
+        nc_nom: '',
+        nc_telephone: ''
+      })
+      setFormulaireOuvert(false)
+      charger()
+    } catch (err) {
+      setErreur(err.message || 'Impossible de créer cette caravane.')
+    } finally {
+      setEnvoi(false)
+    }
+  }
+
+  const agirSurInscription = async (inscription, action) => {
+    setErreur('')
+    setMessage('')
+    setActionEnCours(inscription.id + '-' + action)
+    try {
+      if (action === 'paye') {
+        await api.marquerPaye(inscription.id)
+        setMessage('Paiement confirmé pour ' + inscription.prenom + ' ' + inscription.nom + '.')
+      } else {
+        await api.retirerInscription(inscription.id)
+        setMessage(inscription.prenom + ' ' + inscription.nom + ' a été retiré(e) de la caravane.')
+      }
+      charger()
+    } catch (err) {
+      setErreur(err.message || 'Une erreur est survenue.')
+    } finally {
+      setActionEnCours(null)
+    }
+  }
+
+  return (
+    <div>
+      <h3>Caravanes</h3>
+      <p>
+        Crée la caravane ici : les membres s’inscrivent ensuite tout seuls sur le site public.
+        Quand un membre a payé par Wave, coche « Payé ». Si quelqu’un se désiste, retire-le de la liste.
+        <br />
+        Règle : les désistements ferment 24 heures avant le départ, pour ne pas retarder la caravane.
+      </p>
+
+      {message && <p className="message-ok">{message}</p>}
+      {erreur && <p className="message-erreur">{erreur}</p>}
+
+      <button
+        type="button"
+        className="bouton bouton-bleu"
+        onClick={() => setFormulaireOuvert(!formulaireOuvert)}
+      >
+        {formulaireOuvert ? 'Fermer le formulaire' : 'Créer une caravane'}
+      </button>
+
+      {formulaireOuvert && (
+        <form className="formulaire" onSubmit={creer}>
+          <h3>Nouvelle caravane</h3>
+          <div className="grille-champs">
+            <div className="champ">
+              <label htmlFor="car-date">Date de départ</label>
+              <input id="car-date" type="date" value={form.date_depart} onChange={changer('date_depart')} required />
+            </div>
+            <div className="champ">
+              <label htmlFor="car-heure">Heure de départ</label>
+              <input id="car-heure" type="time" value={form.heure_depart} onChange={changer('heure_depart')} required />
+              <p className="aide">Les désistements ferment 24 h avant cette heure.</p>
+            </div>
+            <div className="champ">
+              <label htmlFor="car-destination">Destination</label>
+              <input
+                id="car-destination"
+                value={form.destination}
+                onChange={changer('destination')}
+                placeholder="Ex : Diourbel"
+                required
+              />
+            </div>
+            <div className="champ">
+              <label htmlFor="car-wave">Numéro Wave du responsable (pour recevoir les paiements)</label>
+              <input
+                id="car-wave"
+                type="tel"
+                value={form.numero_wave_responsable}
+                onChange={changer('numero_wave_responsable')}
+                placeholder="Ex : 77 000 00 00"
+                required
+              />
+            </div>
+            <div className="champ">
+              <label htmlFor="car-chauffeur">Chauffeur</label>
+              <select
+                id="car-chauffeur"
+                value={form.nouveau_chauffeur ? 'nouveau' : form.chauffeur_id}
+                onChange={(e) => {
+                  if (e.target.value === 'nouveau') setForm({ ...form, chauffeur_id: '', nouveau_chauffeur: true })
+                  else if (e.target.value === '') setForm({ ...form, chauffeur_id: '', nouveau_chauffeur: false })
+                  else setForm({ ...form, chauffeur_id: e.target.value, nouveau_chauffeur: false })
+                }}
+              >
+                <option value="">Pas encore désigné</option>
+                {chauffeurs.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.prenom} {c.nom} — {c.telephone}
+                  </option>
+                ))}
+                <option value="nouveau">Nouveau chauffeur (pas dans l’annuaire)</option>
+              </select>
+              <p className="aide">Choisis un chauffeur de l’annuaire, ou ajoute-en un nouveau ici.</p>
+            </div>
+          </div>
+
+          {form.nouveau_chauffeur && (
+            <div className="grille-champs">
+              <div className="champ">
+                <label htmlFor="car-nc-prenom">Prénom du chauffeur</label>
+                <input id="car-nc-prenom" value={form.nc_prenom} onChange={changer('nc_prenom')} required />
+              </div>
+              <div className="champ">
+                <label htmlFor="car-nc-nom">Nom du chauffeur</label>
+                <input id="car-nc-nom" value={form.nc_nom} onChange={changer('nc_nom')} required />
+              </div>
+              <div className="champ">
+                <label htmlFor="car-nc-tel">Numéro du chauffeur</label>
+                <input id="car-nc-tel" type="tel" value={form.nc_telephone} onChange={changer('nc_telephone')} required />
+              </div>
+            </div>
+          )}
+
+          <button type="submit" className="bouton bouton-plein" disabled={envoi}>
+            {envoi ? 'Création…' : 'Créer cette caravane'}
+          </button>
+        </form>
+      )}
+
+      <div style={{ marginTop: 20 }}>
+        {charge && <p className="chargement">Chargement…</p>}
+        {!charge && caravanes.length === 0 && (
+          <p className="vide">Aucune caravane pour le moment. Crée une caravane pour ouvrir les inscriptions.</p>
+        )}
+        {!charge &&
+          caravanes.map((c) => {
+            const actifs = (c.inscriptions || []).filter((i) => i.statut !== 'désisté')
+            const payes = actifs.filter((i) => i.statut === 'payé').length
+            const desistes = (c.inscriptions || []).filter((i) => i.statut === 'désisté')
+            return (
+              <article className="carte carte-caravane" key={c.id}>
+                <h3>
+                  {c.destination} {c.exemple && <span className="badge badge-exemple">Exemple</span>}
+                </h3>
+                <p className="date">
+                  {formatDate(c.date_depart)} à {formatHeure(c.heure_depart)}
+                </p>
+                {c.chauffeur ? (
+                  <p className="ligne">
+                    <span className="etiquette">Chauffeur :</span> {c.chauffeur.prenom} {c.chauffeur.nom} —{' '}
+                    <a href={'tel:' + c.chauffeur.telephone.replace(/\s/g, '')}>{c.chauffeur.telephone}</a>
+                  </p>
+                ) : (
+                  <p className="ligne">
+                    <span className="etiquette">Chauffeur :</span> pas encore désigné
+                  </p>
+                )}
+                <p className="ligne">
+                  <span className="etiquette">Wave du responsable :</span> {c.numero_wave_responsable}
+                </p>
+                <p className="compteurs">
+                  <span>
+                    <strong>{actifs.length}</strong> inscrit(s)
+                  </span>
+                  <span>
+                    <strong>{payes}</strong> payé(s)
+                  </span>
+                  <span>
+                    <strong>{actifs.length - payes}</strong> en attente de paiement
+                  </span>
+                </p>
+
+                <h3 style={{ marginTop: 16 }}>Liste des inscrits</h3>
+                {actifs.length === 0 && <p className="vide">Personne n’est inscrit pour le moment.</p>}
+                {actifs.map((i) => (
+                  <div className="rangee" key={i.id}>
+                    <div className="nom">
+                      {i.prenom} {i.nom} {badgeStatut(i.statut)}
+                    </div>
+                    <div className="details">
+                      <a href={'tel:' + String(i.telephone).replace(/\s/g, '')}>{i.telephone}</a>
+                    </div>
+                    <div className="actions-ligne">
+                      {i.statut === 'inscrit' && (
+                        <button
+                          type="button"
+                          className="bouton-discret"
+                          disabled={actionEnCours === i.id + '-paye'}
+                          onClick={() => agirSurInscription(i, 'paye')}
+                        >
+                          Marquer « Payé »
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="bouton-discret bouton-danger"
+                        disabled={actionEnCours === i.id + '-retirer'}
+                        onClick={() => agirSurInscription(i, 'retirer')}
+                      >
+                        Retirer de la liste
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {desistes.length > 0 && (
+                  <p className="details" style={{ color: '#4d5866', fontSize: 14 }}>
+                    {desistes.length} désistement(s) :{' '}
+                    {desistes.map((i) => i.prenom + ' ' + i.nom).join(', ')}.
+                  </p>
+                )}
+              </article>
+            )
+          })}
+      </div>
+    </div>
+  )
+}

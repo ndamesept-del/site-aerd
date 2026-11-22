@@ -1,0 +1,97 @@
+// Client API du site AERD/UAM.
+//
+// Le site parle aux Netlify Functions (/.netlify/functions/...).
+// En développement local avec `npm run dev`, les fonctions n'existent pas :
+// on bascule alors sur une base locale dans le navigateur (localStorage,
+// voir localMock.js). En production (site déployé sur Netlify), il n'y a
+// pas de repli local : une erreur s'affiche si la base n'est pas configurée.
+
+import { local } from './localMock.js'
+
+const FN = '/.netlify/functions'
+
+let modeLocal = false
+
+export function estModeLocal() {
+  return modeLocal
+}
+
+function getToken() {
+  return localStorage.getItem('aerd-bureau-token') || ''
+}
+
+export function setToken(jeton) {
+  if (jeton) localStorage.setItem('aerd-bureau-token', jeton)
+  else localStorage.removeItem('aerd-bureau-token')
+}
+
+export function estConnecte() {
+  return !!getToken()
+}
+
+async function appelFonction(nom, { methode = 'GET', corps = null, auth = false, params = null } = {}) {
+  let url = FN + '/' + nom
+  if (params) {
+    const qs = new URLSearchParams(params)
+    url += '?' + qs.toString()
+  }
+  const options = { method: methode, headers: { 'Content-Type': 'application/json' } }
+  if (auth && getToken()) options.headers.Authorization = 'Bearer ' + getToken()
+  if (corps) options.body = JSON.stringify(corps)
+  const res = await fetch(url, options)
+  const texte = await res.text()
+  let data = null
+  try {
+    data = JSON.parse(texte)
+  } catch {
+    data = null
+  }
+  if (!res.ok || !data) {
+    const err = new Error((data && data.error) || 'Erreur du serveur (' + res.status + ')')
+    err.status = res.status
+    throw err
+  }
+  return data
+}
+
+async function appel(nom, opts = {}) {
+  if (modeLocal) return local.appel(nom, { ...opts, token: getToken() })
+  if (!import.meta.env.DEV) return appelFonction(nom, opts)
+  try {
+    return await appelFonction(nom, opts)
+  } catch (e) {
+    // Fonctions Netlify absentes en `vite dev` : on passe en mode local.
+    if (e.status === 404 || e.status === 405 || /fetch|JSON|Unexpected token/i.test(e.message)) {
+      modeLocal = true
+      window.dispatchEvent(new Event('aerd-mode-local'))
+      return local.appel(nom, { ...opts, token: getToken() })
+    }
+    throw e
+  }
+}
+
+export const api = {
+  // Public
+  caravanesPubliques: () => appel('caravanes'),
+  inscrire: (donnees) => appel('inscriptions', { methode: 'POST', corps: { action: 'inscrire', ...donnees } }),
+  desister: (donnees) => appel('inscriptions', { methode: 'POST', corps: { action: 'desister', ...donnees } }),
+
+  // Bureau (connexion)
+  login: (password) => appel('login', { methode: 'POST', corps: { password } }),
+
+  // Bureau (données)
+  stats: () => appel('stats', { auth: true }),
+  caravanesBureau: () => appel('caravanes', { auth: true, params: { details: '1' } }),
+  creerCaravane: (donnees) => appel('caravanes', { methode: 'POST', corps: donnees, auth: true }),
+  membres: (q = '') => appel('membres', { auth: true, params: q ? { q } : null }),
+  ajouterMembre: (donnees) => appel('membres', { methode: 'POST', corps: donnees, auth: true }),
+  chauffeurs: (q = '') => appel('chauffeurs', { auth: true, params: q ? { q } : null }),
+  ajouterChauffeur: (donnees) => appel('chauffeurs', { methode: 'POST', corps: donnees, auth: true }),
+  marquerPaye: (inscription_id) =>
+    appel('inscriptions', { methode: 'POST', corps: { action: 'marquer-paye', inscription_id }, auth: true }),
+  retirerInscription: (inscription_id) =>
+    appel('inscriptions', { methode: 'POST', corps: { action: 'retirer', inscription_id }, auth: true }),
+
+  // Données d'exemple (tests seulement, marquées comme exemples)
+  exemples: (action) => appel('exemples', { methode: 'POST', corps: { action }, auth: true })
+}
