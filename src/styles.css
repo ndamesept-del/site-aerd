@@ -554,28 +554,135 @@ p {
 
 .filieres li {
   display: flex;
+}
+
+/* Carte cliquable : ouvre la fiche de la structure dans une fenêtre. */
+.carte-filiere {
+  display: flex;
   flex-direction: column;
-  gap: 2px;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  min-height: 150px;
+  text-align: left;
+  font-family: inherit;
+  font-size: 15.5px;
+  line-height: 1.45;
+  color: var(--texte-doux);
   background: var(--blanc);
   border: 1px solid var(--bordure);
-  border-radius: 18px;
+  border-radius: 20px;
   box-shadow: var(--ombre);
-  padding: 16px 20px;
-  font-size: 15.5px;
-  color: var(--texte-doux);
+  padding: 20px 22px;
+  cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.filieres li:hover {
+.carte-filiere:hover {
   transform: translateY(-3px);
   border-color: var(--or);
   box-shadow: var(--ombre-forte);
 }
 
-.filieres strong {
-  font-size: 19px;
-  letter-spacing: -0.02em;
-  color: var(--bleu);
+.carte-filiere:active {
+  transform: translateY(0);
+}
+
+.filiere-type {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--or-fonce);
+}
+
+.carte-filiere strong {
+  font-size: 24px;
+  letter-spacing: -0.01em;
+  color: var(--bleu-fonce);
+  line-height: 1.15;
+}
+
+.filiere-nom {
+  flex: 1;
+}
+
+.filiere-voir {
+  margin-top: 8px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--bleu-vif);
+}
+
+.carte-filiere:hover .filiere-voir {
+  text-decoration: underline;
+}
+
+/* ---------- Fiche d'une structure (fenêtre) ---------- */
+
+.modale-fiche {
+  max-width: 680px;
+}
+
+.modale-fiche .fiche-nom {
+  color: var(--texte-doux);
+  font-style: italic;
+  margin: 0 0 14px;
+}
+
+.modale-fiche h4 {
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--or-fonce);
+  margin: 22px 0 8px;
+}
+
+.fiche-liste {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 16px;
+}
+
+.fiche-liste li {
+  margin-bottom: 6px;
+  padding-left: 2px;
+}
+
+.fiche-liste li::marker {
+  color: var(--or);
+}
+
+.fiche-note,
+.fiche-avertissement {
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-size: 15px;
+  margin: 18px 0 0;
+}
+
+.fiche-note {
+  background: var(--alerte-fond);
+  border: 1px solid var(--or-bordure);
+  color: var(--alerte-texte);
+}
+
+.fiche-avertissement {
+  background: var(--bleu-tres-clair);
+  border: 1px solid var(--bleu-clair);
+  color: var(--bleu-fonce);
+}
+
+.fiche-liens {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.fiche-liens .bouton {
+  width: 100%;
+  text-align: center;
 }
 
 .niveaux {
@@ -1419,6 +1526,15 @@ p {
 
   .filieres {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .fiche-liens {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .fiche-liens .bouton {
+    width: auto;
   }
 
   .grille-bureau {

@@ -1,10 +1,71 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { FILIERES, NIVEAUX, FORMULAIRE_INSCRIPTION, formatDate, formatMontant } from '../data.js'
 import { api } from '../api.js'
+import Modale from '../components/Modale.jsx'
+import { ficheDe } from '../formations.js'
 
 function initiales(prenom, nom) {
   const lettres = (String(prenom || '').trim().charAt(0) + String(nom || '').trim().charAt(0)).toUpperCase()
   return lettres || '?'
+}
+
+// Fenêtre de présentation d'une structure de l'UAM (formations, débouchés,
+// admission, lien officiel). Réutilise la fenêtre Modale du site : bouton ×,
+// touche Échap et clic sur le fond la ferment.
+function FicheFormation({ filiere, onFermer }) {
+  const fiche = ficheDe(filiere.court)
+  return (
+    <Modale titre={filiere.court} onFermer={onFermer} className="modale-fiche">
+      <p className="fiche-nom">{filiere.long}</p>
+      {!fiche && (
+        <p className="intro">
+          La fiche de cette structure n’est pas encore disponible. Consulte le site de l’UAM pour plus
+          d’informations.
+        </p>
+      )}
+      {fiche && (
+        <>
+          <p>{fiche.resume}</p>
+          <h4>Formations</h4>
+          <ul className="fiche-liste">
+            {fiche.formations.map((t) => (
+              <li key={t}>{t}</li>
+            ))}
+          </ul>
+          <h4>Principaux débouchés</h4>
+          <ul className="fiche-liste">
+            {fiche.debouches.map((t) => (
+              <li key={t}>{t}</li>
+            ))}
+          </ul>
+          <h4>Admission</h4>
+          <ul className="fiche-liste">
+            {fiche.admission.map((t) => (
+              <li key={t}>{t}</li>
+            ))}
+          </ul>
+          {fiche.note && <p className="fiche-note">{fiche.note}</p>}
+          <p className="fiche-avertissement">
+            Les conditions d’admission, les dates et les formations peuvent changer chaque année. Vérifie
+            toujours les informations à jour sur le site de l’UAM.
+          </p>
+          <div className="fiche-liens">
+            {fiche.liens.map((l, i) => (
+              <a
+                key={l.url}
+                className={'bouton' + (i > 0 ? ' bouton-secondaire' : '')}
+                href={l.url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {l.libelle} ↗
+              </a>
+            ))}
+          </div>
+        </>
+      )}
+    </Modale>
+  )
 }
 
 export default function Accueil({ aller }) {
@@ -12,6 +73,8 @@ export default function Accueil({ aller }) {
   const [charge, setCharge] = useState(true)
   const [bureau, setBureau] = useState([])
   const [anciens, setAnciens] = useState([])
+  const [filiereOuverte, setFiliereOuverte] = useState(null)
+  const fermerFiliere = useCallback(() => setFiliereOuverte(null), [])
 
   useEffect(() => {
     api
@@ -184,20 +247,36 @@ export default function Accueil({ aller }) {
 
       <section className="section">
         <div className="conteneur">
-          <h2>Présents dans chaque filière de l’UAM</h2>
-          <p className="intro">
-            En licence ou en master, dans toutes les filières.
-          </p>
+          <h2>Découvrir les formations de l’UAM</h2>
+          <p className="intro">Touche une carte pour voir les formations, les débouchés et l’admission.</p>
           <ul className="filieres">
-            {FILIERES.map((f) => (
-              <li key={f.court}>
-                <strong>{f.court}</strong> — {f.long}
-              </li>
-            ))}
+            {FILIERES.map((f) => {
+              const morceaux = f.court.split(' ')
+              const type = morceaux[0]
+              const sigle = morceaux.slice(1).join(' ')
+              return (
+                <li key={f.court}>
+                  <button
+                    type="button"
+                    className="carte-filiere"
+                    onClick={() => setFiliereOuverte(f)}
+                    aria-haspopup="dialog"
+                  >
+                    <span className="filiere-type">{type}</span>
+                    <strong>{sigle}</strong>
+                    <span className="filiere-nom">{f.long}</span>
+                    <span className="filiere-voir" aria-hidden="true">
+                      Voir la fiche →
+                    </span>
+                  </button>
+                </li>
+              )
+            })}
           </ul>
           <p className="niveaux">
             Niveaux : <strong>{NIVEAUX.join(' · ')}</strong>
           </p>
+          {filiereOuverte && <FicheFormation filiere={filiereOuverte} onFermer={fermerFiliere} />}
         </div>
       </section>
 
