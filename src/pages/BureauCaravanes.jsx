@@ -183,7 +183,11 @@ function FormulaireCaravane({ chauffeurs, onCree, onAnnuler }) {
   )
 }
 
-export default function BureauCaravanes() {
+// Si le mot de passe des caravanes change, le jeton gardé dans le
+// navigateur devient périmé : le serveur refuse l'accès (401). Dans ce
+// cas, on revient au formulaire du mot de passe au lieu de rester bloqué
+// sur « Accès refusé » sans pouvoir retaper le mot de passe.
+export default function BureauCaravanes({ onAccesRefuse }) {
   const [caravanes, setCaravanes] = useState([])
   const [chauffeurs, setChauffeurs] = useState([])
   const [charge, setCharge] = useState(true)
@@ -204,6 +208,10 @@ export default function BureauCaravanes() {
       setCaravanes(dataCaravanes.caravanes || [])
       setChauffeurs(dataChauffeurs.chauffeurs || [])
     } catch (err) {
+      if (err.status === 401 && onAccesRefuse) {
+        onAccesRefuse()
+        return
+      }
       setErreur(err.message || 'Impossible de charger les caravanes.')
     } finally {
       setCharge(false)
@@ -237,6 +245,10 @@ export default function BureauCaravanes() {
       setAConfirmer(null)
       charger()
     } catch (err) {
+      if (err.status === 401 && onAccesRefuse) {
+        onAccesRefuse()
+        return
+      }
       setErreur(err.message || 'Une erreur est survenue.')
       setAConfirmer(null)
     } finally {

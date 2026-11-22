@@ -810,6 +810,26 @@ p {
   color: var(--bleu-fonce);
 }
 
+/* Les 3 étapes pour obtenir sa carte (modèle Pastef : inscription,
+   paiement, carte). */
+.etapes-carte {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.etapes-carte li {
+  background: var(--bleu-tres-clair);
+  border: 1px solid var(--bleu-clair);
+  border-left: 4px solid var(--or);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 17px;
+  line-height: 1.45;
+}
+
 /* Carte de membre numérique (page « Ma carte de membre »). */
 .carte-membre {
   background: var(--bleu-fonce);
@@ -1612,6 +1632,14 @@ p {
 
 .pied-cookies {
   margin-top: 8px;
+  font-size: 14px;
+  color: #8ea3c4;
+}
+
+.pied-credit {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
   font-size: 14px;
   color: #8ea3c4;
 }

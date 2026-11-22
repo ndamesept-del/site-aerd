@@ -161,6 +161,7 @@ export default function App() {
             </a>
           </p>
           <p className="pied-cookies">Ce site ne dépose aucun cookie de suivi.</p>
+          <p className="pied-credit">Fait par Abdou Ndame Thiam</p>
         </div>
       </footer>
     </div>

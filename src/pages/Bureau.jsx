@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { api, setToken, estConnecte, setTokenCaravanes, estConnecteCaravanes } from '../api.js'
 import BureauDashboard from './BureauDashboard.jsx'
 import BureauMembres from './BureauMembres.jsx'
+import BureauCartes from './BureauCartes.jsx'
 import BureauChauffeurs from './BureauChauffeurs.jsx'
 import BureauCaravanes from './BureauCaravanes.jsx'
 import BureauOrganigramme from './BureauOrganigramme.jsx'
@@ -104,7 +105,7 @@ function PageConnexionCaravanes({ onConnecte }) {
 export default function Bureau({ aller }) {
   const [connecte, setConnecte] = useState(estConnecte())
   const [caravanesConnecte, setCaravanesConnecte] = useState(estConnecteCaravanes())
-  const [onglet, setOnglet] = useState('tableau') // tableau | membres | chauffeurs | caravanes | bureau | cotisations | dons
+  const [onglet, setOnglet] = useState('tableau') // tableau | membres | cartes | chauffeurs | caravanes | bureau | cotisations | dons
 
   const quitter = () => {
     setToken(null)
@@ -112,6 +113,19 @@ export default function Bureau({ aller }) {
     setCaravanesConnecte(false)
     setConnecte(false)
     aller('accueil')
+  }
+
+  // Jeton des caravanes périmé (mot de passe changé) : on efface le jeton
+  // et on montre de nouveau le formulaire du mot de passe.
+  const quitterCaravanes = () => {
+    setTokenCaravanes(null)
+    setCaravanesConnecte(false)
+  }
+
+  // Même chose pour le mot de passe du bureau.
+  const quitterBureau = () => {
+    setToken(null)
+    setConnecte(false)
   }
 
   if (!connecte) {
@@ -139,6 +153,9 @@ export default function Bureau({ aller }) {
           </button>
           <button type="button" className={onglet === 'membres' ? 'actif' : ''} onClick={() => setOnglet('membres')}>
             Membres
+          </button>
+          <button type="button" className={onglet === 'cartes' ? 'actif' : ''} onClick={() => setOnglet('cartes')}>
+            Cartes de membres
           </button>
           <button
             type="button"
@@ -177,12 +194,13 @@ export default function Bureau({ aller }) {
           </button>
         </div>
 
-        {onglet === 'tableau' && <BureauDashboard allerOnglet={setOnglet} />}
+        {onglet === 'tableau' && <BureauDashboard allerOnglet={setOnglet} onDeconnecte={quitterBureau} />}
         {onglet === 'membres' && <BureauMembres />}
+        {onglet === 'cartes' && <BureauCartes />}
         {onglet === 'chauffeurs' && <BureauChauffeurs />}
         {onglet === 'caravanes' &&
           (caravanesConnecte ? (
-            <BureauCaravanes />
+            <BureauCaravanes onAccesRefuse={quitterCaravanes} />
           ) : (
             <PageConnexionCaravanes onConnecte={() => setCaravanesConnecte(true)} />
           ))}

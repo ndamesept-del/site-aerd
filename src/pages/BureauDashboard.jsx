@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api.js'
 
-export default function BureauDashboard({ allerOnglet }) {
+export default function BureauDashboard({ allerOnglet, onDeconnecte }) {
   const [stats, setStats] = useState(null)
   const [charge, setCharge] = useState(true)
   const [erreur, setErreur] = useState('')
@@ -11,6 +11,12 @@ export default function BureauDashboard({ allerOnglet }) {
       const data = await api.stats()
       setStats(data)
     } catch (err) {
+      // Jeton périmé (mot de passe du bureau changé) : on revient au
+      // formulaire de connexion au lieu de rester bloqué sur une erreur.
+      if (err.status === 401 && onDeconnecte) {
+        onDeconnecte()
+        return
+      }
       setErreur(err.message || 'Impossible de charger le tableau de bord.')
     } finally {
       setCharge(false)
@@ -64,6 +70,10 @@ export default function BureauDashboard({ allerOnglet }) {
           <strong>Vérifie les paiements</strong> : quand un membre a payé par Wave ou Orange Money, coche
           « Payé » sur son inscription. Si quelqu’un se désiste, retire-le de la liste.
         </li>
+        <li>
+          <strong>Valide les cartes de membres</strong> : quand un membre a payé ses 1 000 FCFA, valide son
+          paiement dans l’onglet « Cartes de membres ». Il pourra ensuite télécharger sa carte avec son QR code.
+        </li>
       </ul>
 
       <div className="actions">
@@ -72,6 +82,9 @@ export default function BureauDashboard({ allerOnglet }) {
         </button>
         <button type="button" className="bouton bouton-secondaire" onClick={() => allerOnglet('membres')}>
           Ajouter un membre
+        </button>
+        <button type="button" className="bouton bouton-secondaire" onClick={() => allerOnglet('cartes')}>
+          Valider les cartes de membres
         </button>
       </div>
 

@@ -58,10 +58,18 @@ export default function MaCarte() {
     <div className="conteneur">
       <section className="section">
         <h2>Ma carte de membre</h2>
-        <p className="intro">
-          Ta carte coûte {formatMontant(PRIX_CARTE_FCFA)}. Paie-la par Wave ou Orange Money, le bureau confirme ton
-          paiement, puis reviens ici pour télécharger ta carte avec ton QR code.
-        </p>
+        <ol className="etapes-carte">
+          <li>
+            <strong>1. Paie {formatMontant(PRIX_CARTE_FCFA)}</strong> par Wave ou Orange Money au trésorier.
+          </li>
+          <li>
+            <strong>2. Le trésorier valide ton paiement</strong> au bureau.
+          </li>
+          <li>
+            <strong>3. Reviens ici</strong> avec ton numéro de téléphone et <strong>télécharge ta carte</strong> avec
+            ton QR code.
+          </li>
+        </ol>
 
         {!membre && (
           <form className="formulaire" onSubmit={chercher}>
