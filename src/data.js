@@ -1,5 +1,9 @@
 // Données fixes du site AERD/UAM : filières, niveaux, liens utiles.
 
+// Filières (structures de l'UAM) présentes à l'amicale. Seuls « court » et
+// « long » servent à l'espace bureau et aux fiches des membres : ne pas
+// changer ces libellés. Les fiches détaillées de la page d'accueil
+// (formations, débouchés, admission) sont dans formations.js.
 export const FILIERES = [
   { court: 'UFR SEG', long: 'Sciences Économiques et de Gestion' },
   { court: 'UFR STA', long: 'Sciences et Technologies Avancées' },
@@ -55,6 +59,25 @@ export function formatDate(dateStr) {
 // Petit nettoyage d'un numéro de téléphone (espaces en trop retirés)
 export function normaliserTelephone(valeur) {
   return String(valeur || '').replace(/\s+/g, ' ').trim()
+}
+
+// Cotisation mensuelle du volet social : chaque membre paye ce montant
+// chaque mois (500 FCFA). Le bureau suit les paiements dans l'espace
+// bureau (onglet « Cotisations ») et coche « Payé » après vérification.
+export const MONTANT_COTISATION = 500
+
+// Mois courant au format « AAAA-MM », ex : « 2026-11 ».
+// L'heure est celle de Dakar (UTC+0).
+export function moisCourant() {
+  return new Date().toISOString().slice(0, 7)
+}
+
+// Mois « AAAA-MM » en français, ex : « novembre 2026 ».
+export function formatMois(mois) {
+  if (!/^\d{4}-\d{2}$/.test(String(mois || ''))) return String(mois || '')
+  const d = new Date(mois + '-01T12:00:00')
+  if (Number.isNaN(d.getTime())) return String(mois)
+  return d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
 }
 
 // Règle des désistements : on ne peut plus se désister quand il reste

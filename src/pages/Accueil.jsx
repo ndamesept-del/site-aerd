@@ -144,10 +144,21 @@ export default function Accueil({ aller }) {
             </article>
             <article className="carte-fonction">
               <span className="numero-fonction" aria-hidden="true">3</span>
-              <h3>Garder le lien</h3>
+                            <h3>Garder le lien</h3>
               <p>
                 Un annuaire des chauffeurs transmis d’un bureau à l’autre.
               </p>
+            </article>
+            <article className="carte-fonction">
+              <span className="numero-fonction" aria-hidden="true">4</span>
+              <h3>S’entraider</h3>
+              <p>
+                500 FCFA par mois de cotisation : le bureau donne des tickets aux étudiants qui en ont
+                besoin, en priorité aux non-boursiers.
+              </p>
+              <button type="button" className="bouton-discret" onClick={() => aller('cotisations')}>
+                Cotisations et dons ›
+              </button>
             </article>
           </div>
         </div>

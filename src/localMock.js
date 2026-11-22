@@ -19,7 +19,11 @@ function etatVide() {
     caravanes: [],
     inscriptions: [],
     bureau: [],
-    seq: { membre: 1, chauffeur: 1, caravane: 1, inscription: 1, bureau: 1 }
+    cotisations: [],
+    dons_tickets: [],
+    inscriptions_tickets: [],
+    parametres: {},
+    seq: { membre: 1, chauffeur: 1, caravane: 1, inscription: 1, bureau: 1, cotisation: 1, don: 1, inscription_ticket: 1 }
   }
 }
 
@@ -237,6 +241,38 @@ export const local = {
         }
         return { membres: liste }
       }
+      // Statut boursier : vrai, faux, ou null (non renseigné). Le bureau
+      // le définit pour chaque membre, dans le formulaire d'ajout et
+      // de modification.
+      const boursier =
+        corps.boursier === true || corps.boursier === 'true'
+          ? true
+          : corps.boursier === false || corps.boursier === 'false'
+            ? false
+            : null
+      if ((opts.methode || 'GET') === 'PUT') {
+        const membre = etat.membres.find((m) => m.id === Number(corps.id))
+        if (!membre) erreur('Membre introuvable.')
+        const prenom = nettoyerTexte(corps.prenom)
+        const nom = nettoyerTexte(corps.nom)
+        const telephone = nettoyerTexte(corps.telephone)
+        const ufr_departement = nettoyerTexte(corps.ufr_departement)
+        const niveau = nettoyerTexte(corps.niveau)
+        const origine = nettoyerTexte(corps.origine)
+        if (!prenom || !nom || !telephone || !ufr_departement || !niveau || !origine) {
+          erreur('Prénom, nom, téléphone, filière, niveau et origine sont obligatoires.')
+        }
+        membre.prenom = prenom
+        membre.nom = nom
+        membre.telephone = telephone
+        membre.telephone_parent = nettoyerTexte(corps.telephone_parent)
+        membre.ufr_departement = ufr_departement
+        membre.niveau = niveau
+        membre.origine = origine
+        membre.boursier = boursier
+        sauver(etat)
+        return { membre }
+      }
       const membre = {
         id: etat.seq.membre++,
         prenom: nettoyerTexte(corps.prenom),
@@ -246,6 +282,7 @@ export const local = {
         ufr_departement: nettoyerTexte(corps.ufr_departement),
         niveau: nettoyerTexte(corps.niveau),
         origine: nettoyerTexte(corps.origine),
+        boursier,
         exemple: false
       }
       if (!membre.prenom || !membre.nom || !membre.telephone || !membre.ufr_departement || !membre.niveau || !membre.origine) {
@@ -346,6 +383,177 @@ export const local = {
       erreur('Méthode inconnue.')
     }
 
+    if (nom === 'cotisations') {
+      exigerAuth(opts)
+      const mois = nettoyerTexte(params.mois)
+      if ((opts.methode || 'GET') === 'GET') {
+        if (!/^\d{4}-\d{2}$/.test(mois)) erreur('Mois invalide. Utilise le format AAAA-MM, ex : 2026-11.')
+        const membres = [...etat.membres]
+          .sort((a, b) => a.nom.localeCompare(b.nom, 'fr'))
+          .map((m) => {
+            const cot = etat.cotisations.find((c) => c.membre_id === m.id && c.mois === mois)
+            return { id: m.id, prenom: m.prenom, nom: m.nom, telephone: m.telephone, statut: cot ? cot.statut : 'en_attente', montant_fcfa: 500 }
+          })
+        const payes = membres.filter((m) => m.statut === 'paye')
+        return {
+          mois,
+          membres,
+          total_membres: membres.length,
+          payes: payes.length,
+          total_collecte: payes.length * 500
+        }
+      }
+      // POST : marquer payé ou remettre en attente.
+      const membre_id = Number(corps.membre_id)
+      const statut = nettoyerTexte(corps.statut)
+      if (!membre_id || !/^\d{4}-\d{2}$/.test(nettoyerTexte(corps.mois))) {
+        erreur('Membre et mois (AAAA-MM) sont obligatoires.')
+      }
+      if (statut !== 'paye' && statut !== 'en_attente') erreur('Statut invalide.')
+      if (!etat.membres.find((m) => m.id === membre_id)) erreur('Membre introuvable.')
+      let cot = etat.cotisations.find((c) => c.membre_id === membre_id && c.mois === nettoyerTexte(corps.mois))
+      if (cot) {
+        cot.statut = statut
+      } else {
+        cot = { id: etat.seq.cotisation++, membre_id, mois: nettoyerTexte(corps.mois), montant_fcfa: 500, statut }
+        etat.cotisations.push(cot)
+      }
+      sauver(etat)
+      return { cotisation: { membre_id: cot.membre_id, mois: cot.mois, montant_fcfa: cot.montant_fcfa, statut: cot.statut } }
+    }
+
+    if (nom === 'dons') {
+      if ((opts.methode || 'GET') === 'GET') {
+        const restants = (don) => {
+          const attribues = etat.inscriptions_tickets.filter((i) => i.don_id === don.id && i.statut === 'attribue').length
+          return Math.max(0, Number(don.nombre_tickets || 0) - attribues)
+        }
+        const ligne = (don) => ({
+          id: don.id,
+          titre: don.titre,
+          description: don.description || '',
+          nombre_tickets: Number(don.nombre_tickets || 0),
+          tickets_restants: restants(don),
+          lieu_retrait: don.lieu_retrait,
+          statut: don.statut,
+          exemple: !!don.exemple
+        })
+        const liste = [...etat.dons_tickets].sort((a, b) => b.id - a.id)
+        if (params.details === '1') {
+          exigerAuth(opts)
+          // Tri automatique côté serveur : les non-boursiers d'abord,
+          // puis les non renseignés (NULL), puis les boursiers.
+          const rang = (i) => (i.boursier === false ? 0 : i.boursier == null ? 1 : 2)
+          const trier = (a, b) => rang(a) - rang(b) || a.id - b.id
+          return {
+            dons: liste.map((d) => ({
+              ...ligne(d),
+              inscrits: etat.inscriptions_tickets.filter((i) => i.don_id === d.id).sort(trier)
+            }))
+          }
+        }
+        return { dons: liste.filter((d) => d.statut === 'ouvert').map(ligne) }
+      }
+      exigerAuth(opts)
+      if ((opts.methode || 'GET') === 'POST') {
+        const titre = nettoyerTexte(corps.titre)
+        const description = nettoyerTexte(corps.description)
+        const nombre_tickets = Math.trunc(Number(corps.nombre_tickets))
+        const lieu_retrait = nettoyerTexte(corps.lieu_retrait)
+        if (!titre || !lieu_retrait) erreur('Le titre et le lieu de retrait sont obligatoires.')
+        if (!Number.isFinite(nombre_tickets) || nombre_tickets < 1) erreur('Le nombre de tickets doit être au moins 1.')
+        const don = { id: etat.seq.don++, titre, description, nombre_tickets, lieu_retrait, statut: 'ouvert', exemple: false }
+        etat.dons_tickets.push(don)
+        sauver(etat)
+        return { don: { ...don, tickets_restants: nombre_tickets } }
+      }
+      if (opts.methode === 'PUT') {
+        const don = etat.dons_tickets.find((d) => d.id === Number(corps.id))
+        if (!don) erreur('Campagne introuvable.')
+        const statut = nettoyerTexte(corps.statut)
+        if (statut !== 'ouvert' && statut !== 'ferme') erreur('Statut invalide.')
+        don.statut = statut
+        sauver(etat)
+        const attribues = etat.inscriptions_tickets.filter((i) => i.don_id === don.id && i.statut === 'attribue').length
+        return { don: { ...don, tickets_restants: Math.max(0, Number(don.nombre_tickets || 0) - attribues) } }
+      }
+      erreur('Méthode inconnue.')
+    }
+
+    if (nom === 'inscriptions_tickets') {
+      if (corps.action === 'attribuer' || corps.action === 'refuser') {
+        exigerAuth(opts)
+        const inscription = etat.inscriptions_tickets.find((i) => i.id === Number(corps.id))
+        if (!inscription) erreur('Inscription introuvable.')
+        if (corps.action === 'attribuer') {
+          if (inscription.statut !== 'inscrit') erreur('Cette demande a déjà été traitée.')
+          const don = etat.dons_tickets.find((d) => d.id === inscription.don_id)
+          if (!don) erreur('Campagne introuvable.')
+          const attribues = etat.inscriptions_tickets.filter((i) => i.don_id === don.id && i.statut === 'attribue').length
+          if (attribues >= Number(don.nombre_tickets)) erreur('Il n’y a plus de tickets pour cette campagne.')
+          inscription.statut = 'attribue'
+          sauver(etat)
+          return { inscription }
+        }
+        if (inscription.statut !== 'inscrit') erreur('Inscription introuvable ou déjà traitée.')
+        inscription.statut = 'refuse'
+        sauver(etat)
+        return { inscription }
+      }
+      // Inscription publique à une campagne de dons.
+      if (nettoyerTexte(corps.site_web)) erreur('Une erreur est survenue.')
+      const don_id = Number(corps.don_id)
+      const prenom = nettoyerTexte(corps.prenom)
+      const nom = nettoyerTexte(corps.nom)
+      const telephone = nettoyerTexte(corps.telephone)
+      if (!don_id || !prenom || !nom || !telephone) erreur('Prénom, nom et numéro de téléphone sont obligatoires.')
+      if (telephone.replace(/\D/g, '').length < 9) erreur('Le numéro de téléphone semble incomplet.')
+      const don = etat.dons_tickets.find((d) => d.id === don_id)
+      if (!don) erreur('Campagne introuvable.')
+      if (don.statut !== 'ouvert') erreur('Cette campagne de dons est fermée.')
+      const attribues = etat.inscriptions_tickets.filter((i) => i.don_id === don_id && i.statut === 'attribue').length
+      if (attribues >= Number(don.nombre_tickets)) erreur('Il n’y a plus de tickets pour cette campagne.')
+      // Statut boursier : rempli TOUT SEUL par le site. On cherche le numéro
+      // de téléphone dans la liste des membres et on copie son statut
+      // (vrai, faux, ou NULL si la personne n'est pas membre ou si son
+      // statut n'est pas renseigné). On ne demande JAMAIS « Es-tu
+      // boursier ? » dans ce formulaire.
+      const telPropre = telephone.replace(/\s/g, '')
+      const membreTrouve = etat.membres.find((m) => String(m.telephone).replace(/\s/g, '') === telPropre)
+      const boursier = membreTrouve ? (membreTrouve.boursier == null ? null : !!membreTrouve.boursier) : null
+      const existante = etat.inscriptions_tickets.find(
+        (i) => i.don_id === don_id && i.telephone === telephone && i.statut !== 'refuse'
+      )
+      if (existante) erreur('Ce numéro est déjà inscrit pour cette campagne de dons.')
+      const ancienne = etat.inscriptions_tickets.find(
+        (i) => i.don_id === don_id && i.telephone === telephone && i.statut === 'refuse'
+      )
+      if (ancienne) {
+        ancienne.prenom = prenom
+        ancienne.nom = nom
+        ancienne.boursier = boursier
+        ancienne.statut = 'inscrit'
+        sauver(etat)
+        return { inscription: ancienne }
+      }
+      const inscription = { id: etat.seq.inscription_ticket++, don_id, prenom, nom, telephone, boursier, statut: 'inscrit' }
+      etat.inscriptions_tickets.push(inscription)
+      sauver(etat)
+      return { inscription }
+    }
+
+    if (nom === 'parametres') {
+      if ((opts.methode || 'GET') === 'GET') {
+        return { numero_wave_tresorier: etat.parametres.numero_wave_tresorier || '' }
+      }
+      exigerAuth(opts)
+      const numero = nettoyerTexte(corps.numero_wave_tresorier)
+      if (numero && numero.replace(/\D/g, '').length < 9) erreur('Le numéro de téléphone semble incomplet.')
+      etat.parametres.numero_wave_tresorier = numero
+      sauver(etat)
+      return { numero_wave_tresorier: numero }
+    }
+
     if (nom === 'stats') {
       exigerAuth(opts)
       return {
@@ -406,6 +614,7 @@ export const local = {
             ufr_departement: 'UFR SEG',
             niveau: 'L2',
             origine: 'Diourbel',
+            boursier: null,
             exemple: true
           })
         }

@@ -94,6 +94,63 @@ INSERT INTO bureau (prenom, nom, poste, ordre) VALUES ('Mame Cheikh', 'Niang', '
 La dernière ligne ajoute le président actuel à l'organigramme (sans photo pour
 l'instant : il l'ajoutera lui-même dans l'espace bureau, onglet « Organigramme »).
 
+**Cotisations et dons de tickets (volet social)** : si ta base existe déjà, colle
+aussi ces 4 requêtes dans l'éditeur SQL de Neon :
+
+```sql
+CREATE TABLE IF NOT EXISTS cotisations (
+  id SERIAL PRIMARY KEY,
+  membre_id INTEGER NOT NULL REFERENCES membres(id) ON DELETE CASCADE,
+  mois TEXT NOT NULL,
+  montant_fcfa INTEGER NOT NULL DEFAULT 500,
+  statut TEXT NOT NULL DEFAULT 'en_attente'
+    CHECK (statut IN ('en_attente', 'paye')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (membre_id, mois)
+);
+
+CREATE TABLE IF NOT EXISTS dons_tickets (
+  id SERIAL PRIMARY KEY,
+  titre TEXT NOT NULL,
+  description TEXT,
+  nombre_tickets INTEGER NOT NULL,
+  lieu_retrait TEXT NOT NULL,
+  statut TEXT NOT NULL DEFAULT 'ouvert'
+    CHECK (statut IN ('ouvert', 'ferme')),
+  exemple BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS inscriptions_tickets (
+  id SERIAL PRIMARY KEY,
+  don_id INTEGER NOT NULL REFERENCES dons_tickets(id) ON DELETE CASCADE,
+  prenom TEXT NOT NULL,
+  nom TEXT NOT NULL,
+  telephone TEXT NOT NULL,
+  boursier BOOLEAN DEFAULT NULL,
+  statut TEXT NOT NULL DEFAULT 'inscrit'
+    CHECK (statut IN ('inscrit', 'attribue', 'refuse')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (don_id, telephone)
+);
+
+CREATE TABLE IF NOT EXISTS parametres (
+  cle TEXT PRIMARY KEY,
+  valeur TEXT NOT NULL
+);
+```
+
+Si la table `inscriptions_tickets` existe déjà sans la colonne « boursier »,
+ajoute-la avec : `ALTER TABLE inscriptions_tickets ADD COLUMN IF NOT EXISTS boursier BOOLEAN DEFAULT NULL;`
+
+**Statut boursier des membres** : si ta base existe déjà, ajoute aussi cette colonne
+à la table des membres (elle accepte NULL : les membres importés de la liste papier
+n'ont pas cette information, ils restent « Non renseigné ») :
+
+```sql
+ALTER TABLE membres ADD COLUMN IF NOT EXISTS boursier BOOLEAN DEFAULT NULL;
+```
+
 Pourquoi pas la base d'essai de Netlify ? L'ancienne « Netlify DB » en version d'essai ne dure que 7 jours : si on ne la relie pas à un compte Neon dans les 7 jours, elle est supprimée. En créant la base directement sur Neon, il n'y a pas du tout cette limite de 7 jours.
 
 Pourquoi pas une base sur ton ordinateur ? Un site déployé sur internet ne peut pas joindre une base qui est sur ton ordinateur : ton ordinateur n'est pas toujours allumé, et il n'a pas d'adresse publique sur internet. La base doit être en ligne, comme le site.
@@ -150,14 +207,18 @@ Netlify redéploie le site tout seul.
 
 ## 6. Vérifier que tout marche
 
-1. Ouvre le site. La page d’accueil s’affiche avec le logo, les 8 filières et les niveaux.
+1. Ouvre le site. La page d’accueil s’affiche avec le logo, les 8 filières et les niveaux. Clique sur une filière : une pop-up montre ce qu’on y étudie, les diplômes, la durée et les débouchés (informations du site officiel de l’UAM).
 2. Va dans « Caravanes » : aucune caravane au début, c’est normal.
 3. Connecte-toi à l’espace bureau avec ton mot de passe.
 4. Dans le tableau de bord, clique sur « Charger des exemples » pour tester.
 5. Va dans « Caravanes », crée une caravane (ou utilise l’exemple).
 6. Sur le site public, inscris-toi à la caravane, puis reviens dans le bureau :
    ton inscription apparaît, coche « Payé », puis essaie « Retirer de la liste ».
-7. Quand tu as fini de tester, clique sur « Supprimer les exemples ».
+7. Cotisations et dons : dans l’espace bureau, onglet « Cotisations », choisis le mois et coche
+   « Payé » pour un membre ; dans l’onglet « Dons de tickets », crée une campagne, puis sur la
+   page publique « Cotisations et dons », inscris-toi pour un ticket et reviens dans le bureau
+   pour l’attribuer.
+8. Quand tu as fini de tester, clique sur « Supprimer les exemples ».
 
 ## Structure du projet
 
@@ -167,7 +228,7 @@ site-aerd/
   package.json            Dépendances (React, Vite, pg)
   vite.config.js          Configuration Vite
   netlify.toml            Configuration Netlify (build, dossier des fonctions)
-  schema.sql              Tables PostgreSQL (membres, chauffeurs, caravanes, inscriptions, bureau)
+  schema.sql              Tables PostgreSQL (membres, chauffeurs, caravanes, inscriptions, bureau, cotisations, dons_tickets, inscriptions_tickets, parametres)
   .env.example            Modèle des variables d'environnement (à copier en .env)
   public/
     Logo_AERD_UAM.png     Logo de l'amicale (utilisé dans l'en-tête)
@@ -188,6 +249,9 @@ site-aerd/
       BureauChauffeurs.jsx Annuaire des chauffeurs
       BureauCaravanes.jsx Création de caravanes, inscrits, paiements
       BureauOrganigramme.jsx Organigramme : photo, nom et poste de chaque membre du bureau
+      BureauCotisations.jsx Cotisations mensuelles : qui a payé, total collecté, numéro du trésorier
+      BureauDons.jsx      Campagnes de dons de tickets, inscrits, attribution des tickets
+      CotisationsDons.jsx Page publique : cotisations et dons de tickets
   netlify/functions/
     db.js                 Connexion PostgreSQL et réponses JSON
     auth.js               Mot de passe du bureau et jeton de session
@@ -197,6 +261,10 @@ site-aerd/
     membres.js            Recherche et ajout de membres
     chauffeurs.js         Recherche et ajout de chauffeurs
     bureau.js             Organigramme du bureau (lecture publique, écriture réservée au bureau)
+    cotisations.js        Cotisations mensuelles (bureau seulement)
+    dons.js               Campagnes de dons (lecture publique, inscrits réservés au bureau)
+    inscriptions_tickets.js S'inscrire à un don, attribuer ou refuser un ticket
+    parametres.js         Numéro Wave du trésorier (lecture publique, écriture réservée au bureau)
     stats.js              Compteurs du tableau de bord
     exemples.js           Charger / supprimer les données d'exemple
 ```
@@ -218,6 +286,23 @@ site-aerd/
   le membre voit le montant de la place et le numéro du responsable, il paie,
   et le bureau coche « Payé » après vérification. Il n’y a pas de paiement
   automatique sur le site (il faudrait un compte marchand).
+- **Cotisations et dons de tickets (volet social) :** chaque membre cotise 500 FCFA par
+  mois. Le bureau suit les paiements dans l’espace bureau (onglet « Cotisations ») et
+  coche « Payé » après vérification. Le numéro Wave / Orange Money du trésorier se règle
+  dans le même onglet et s’affiche sur la page publique. Pour les dons, le bureau crée
+  une campagne (nombre de tickets, lieu de retrait), l’annonce sur WhatsApp, et les gens
+  qui en ont besoin s’inscrivent sur la page publique « Cotisations et dons de tickets ».
+  **Les non-boursiers sont prioritaires, et le tri est automatique :** quand quelqu’un
+  s’inscrit à un don, le site cherche son numéro dans la liste des membres et copie
+  son statut boursier avec l’inscription (vrai, faux, ou NULL si la personne n’est pas
+  membre ou si son statut n’est pas renseigné). La liste renvoyée au bureau est déjà
+  triée toute seule : non-boursiers d’abord, puis non renseignés, puis boursiers. Le
+  bureau n’a rien à trier à la main. **La question « Es-tu boursier ? » n’est jamais
+  posée dans le formulaire des tickets** : elle est dans le formulaire principal
+  d’inscription à l’amicale (Google Forms), et le bureau peut aussi définir le statut
+  pour chaque membre dans l’onglet « Membres » (à l’ajout et à la modification).
+  **La liste des inscrits aux dons reste dans l’espace bureau seulement** : elle n’est
+  jamais publique.
 - **Organigramme : chaque membre du bureau met lui-même sa photo** (depuis son
   téléphone, dans l’espace bureau, onglet « Organigramme »). La photo est
   enregistrée dans la base de données et s’affiche sur la page d’accueil,

@@ -88,6 +88,7 @@ export const api = {
   creerCaravane: (donnees) => appel('caravanes', { methode: 'POST', corps: donnees, auth: true }),
   membres: (q = '') => appel('membres', { auth: true, params: q ? { q } : null }),
   ajouterMembre: (donnees) => appel('membres', { methode: 'POST', corps: donnees, auth: true }),
+  modifierMembre: (donnees) => appel('membres', { methode: 'PUT', corps: donnees, auth: true }),
   chauffeurs: (q = '') => appel('chauffeurs', { auth: true, params: q ? { q } : null }),
   ajouterChauffeur: (donnees) => appel('chauffeurs', { methode: 'POST', corps: donnees, auth: true }),
   bureauPublic: () => appel('bureau'),
@@ -100,6 +101,24 @@ export const api = {
     appel('inscriptions', { methode: 'POST', corps: { action: 'marquer-paye', inscription_id }, auth: true }),
   retirerInscription: (inscription_id) =>
     appel('inscriptions', { methode: 'POST', corps: { action: 'retirer', inscription_id }, auth: true }),
+
+  // Cotisations et dons de tickets (volet social)
+  cotisations: (mois) => appel('cotisations', { auth: true, params: { mois } }),
+  marquerCotisation: (membre_id, mois, statut) =>
+    appel('cotisations', { methode: 'POST', corps: { membre_id, mois, statut }, auth: true }),
+  donsPublics: () => appel('dons'),
+  donsBureau: () => appel('dons', { auth: true, params: { details: '1' } }),
+  creerDon: (donnees) => appel('dons', { methode: 'POST', corps: donnees, auth: true }),
+  changerStatutDon: (id, statut) =>
+    appel('dons', { methode: 'PUT', corps: { id, statut }, auth: true }),
+  inscrireTicket: (donnees) => appel('inscriptions_tickets', { methode: 'POST', corps: donnees }),
+  attribuerTicket: (id) =>
+    appel('inscriptions_tickets', { methode: 'POST', corps: { action: 'attribuer', id }, auth: true }),
+  refuserTicket: (id) =>
+    appel('inscriptions_tickets', { methode: 'POST', corps: { action: 'refuser', id }, auth: true }),
+  parametresPublics: () => appel('parametres'),
+  definirNumeroTresorier: (numero_wave_tresorier) =>
+    appel('parametres', { methode: 'POST', corps: { numero_wave_tresorier }, auth: true }),
 
   // Données d'exemple (tests seulement, marquées comme exemples)
   exemples: (action) => appel('exemples', { methode: 'POST', corps: { action }, auth: true })

@@ -3,41 +3,49 @@ import { FILIERES, NIVEAUX, ORIGINES, normaliserTelephone } from '../data.js'
 import { api } from '../api.js'
 import Modale from '../components/Modale.jsx'
 
-function FormulaireMembre({ onAjoute, onAnnuler }) {
+function FormulaireMembre({ membre, onAjoute, onAnnuler }) {
   const [envoi, setEnvoi] = useState(false)
   const [erreur, setErreur] = useState('')
   const [form, setForm] = useState({
-    prenom: '',
-    nom: '',
-    telephone: '',
-    telephone_parent: '',
-    ufr_departement: '',
-    niveau: '',
-    origine: ''
+    prenom: membre ? membre.prenom : '',
+    nom: membre ? membre.nom : '',
+    telephone: membre ? membre.telephone : '',
+    telephone_parent: membre ? membre.telephone_parent || '' : '',
+    ufr_departement: membre ? membre.ufr_departement : '',
+    niveau: membre ? membre.niveau : '',
+    origine: membre ? membre.origine : '',
+    // '' = non renseigné, 'oui' = boursier, 'non' = non boursier
+    boursier: membre ? (membre.boursier === true ? 'oui' : membre.boursier === false ? 'non' : '') : ''
   })
 
   const changer = (cle) => (e) => setForm({ ...form, [cle]: e.target.value })
 
-  const ajouter = async (e) => {
+  const enregistrer = async (e) => {
     e.preventDefault()
     setErreur('')
     setEnvoi(true)
     try {
-      await api.ajouterMembre({
+      const donnees = {
         ...form,
         telephone: normaliserTelephone(form.telephone),
-        telephone_parent: normaliserTelephone(form.telephone_parent)
-      })
+        telephone_parent: normaliserTelephone(form.telephone_parent),
+        boursier: form.boursier === 'oui' ? true : form.boursier === 'non' ? false : null
+      }
+      if (membre) {
+        await api.modifierMembre({ ...donnees, id: membre.id })
+      } else {
+        await api.ajouterMembre(donnees)
+      }
       onAjoute(form.prenom + ' ' + form.nom)
     } catch (err) {
-      setErreur(err.message || 'Impossible d’ajouter ce membre.')
+      setErreur(err.message || 'Impossible d’enregistrer ce membre.')
     } finally {
       setEnvoi(false)
     }
   }
 
   return (
-    <form className="formulaire" onSubmit={ajouter}>
+    <form className="formulaire" onSubmit={enregistrer}>
       {erreur && <p className="message-erreur">{erreur}</p>}
       <div className="grille-champs">
         <div className="champ">
@@ -90,10 +98,22 @@ function FormulaireMembre({ onAjoute, onAnnuler }) {
             ))}
           </select>
         </div>
+        <div className="champ">
+          <label htmlFor="m-boursier">Boursier ?</label>
+          <select id="m-boursier" value={form.boursier} onChange={changer('boursier')}>
+            <option value="">Non renseigné</option>
+            <option value="oui">Boursier</option>
+            <option value="non">Non boursier</option>
+          </select>
+          <p className="aide">
+            Pour les dons de tickets, les non-boursiers sont prioritaires. Si tu ne sais pas, laisse
+            « Non renseigné ».
+          </p>
+        </div>
       </div>
       <div className="actions">
         <button type="submit" className="bouton bouton-plein" disabled={envoi}>
-          {envoi ? 'Ajout…' : 'Ajouter ce membre'}
+          {envoi ? 'Enregistrement…' : membre ? 'Enregistrer les modifications' : 'Ajouter ce membre'}
         </button>
         <button type="button" className="bouton bouton-secondaire bouton-plein" onClick={onAnnuler}>
           Annuler
@@ -110,6 +130,8 @@ export default function BureauMembres() {
   const [erreur, setErreur] = useState('')
   const [message, setMessage] = useState('')
   const [modaleOuverte, setModaleOuverte] = useState(false)
+  // Membre en cours de modification (null = pas de modification en cours)
+  const [membreAModifier, setMembreAModifier] = useState(null)
 
   const charger = async (q = recherche) => {
     setErreur('')
@@ -136,8 +158,9 @@ export default function BureauMembres() {
   }, [recherche])
 
   const apresAjout = (nomComplet) => {
-    setMessage('Membre ajouté : ' + nomComplet + '.')
+    setMessage('Membre enregistré : ' + nomComplet + '.')
     setModaleOuverte(false)
+    setMembreAModifier(null)
     charger(recherche)
   }
 
@@ -177,6 +200,19 @@ export default function BureauMembres() {
         </Modale>
       )}
 
+      {membreAModifier && (
+        <Modale
+          titre={'Modifier ' + membreAModifier.prenom + ' ' + membreAModifier.nom}
+          onFermer={() => setMembreAModifier(null)}
+        >
+          <FormulaireMembre
+            membre={membreAModifier}
+            onAjoute={apresAjout}
+            onAnnuler={() => setMembreAModifier(null)}
+          />
+        </Modale>
+      )}
+
       <div style={{ marginTop: 20 }}>
         {charge && <p className="chargement">Chargement…</p>}
         {!charge && membres.length === 0 && (
@@ -188,7 +224,14 @@ export default function BureauMembres() {
           membres.map((m) => (
             <div className="rangee" key={m.id}>
               <div className="nom">
-                {m.prenom} {m.nom} {m.exemple && <span className="badge badge-exemple">Exemple</span>}
+                {m.prenom} {m.nom} {m.exemple && <span className="badge badge-exemple">Exemple</span>}{' '}
+                {m.boursier === true ? (
+                  <span className="badge badge-inscrit">Boursier</span>
+                ) : m.boursier === false ? (
+                  <span className="badge badge-prioritaire">Non boursier</span>
+                ) : (
+                  <span className="badge badge-desiste">Non renseigné</span>
+                )}
               </div>
               <div className="details">
                 <a href={'tel:' + String(m.telephone).replace(/\s/g, '')}>{m.telephone}</a>
@@ -196,6 +239,11 @@ export default function BureauMembres() {
                 {m.ufr_departement} · {m.niveau} · {m.origine}
               </div>
               {m.telephone_parent && <div className="details">Parent (urgence) : {m.telephone_parent}</div>}
+              <div className="actions-ligne">
+                <button type="button" className="bouton-discret" onClick={() => setMembreAModifier(m)}>
+                  Modifier
+                </button>
+              </div>
             </div>
           ))}
         {!charge && membres.length > 0 && (

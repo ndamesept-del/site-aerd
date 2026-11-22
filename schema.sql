@@ -23,9 +23,20 @@ CREATE TABLE IF NOT EXISTS membres (
   ufr_departement TEXT NOT NULL,
   niveau TEXT NOT NULL CHECK (niveau IN ('L1', 'L2', 'L3', 'M1', 'M2')),
   origine TEXT NOT NULL CHECK (origine IN ('Diourbel', 'Bambey')),
+  -- Boursier ou non : la question est dans le formulaire d'inscription
+  -- à l'amicale. NULL veut dire « on ne sait pas » : les 29 membres
+  -- importés de la liste papier n'ont pas cette information, on ne
+  -- doit pas les étiqueter « Non boursier » par défaut. Le bureau peut
+  -- renseigner le statut pour chaque membre, dans l'onglet « Membres ».
+  -- Pour les dons de tickets, les non-boursiers sont prioritaires.
+  boursier BOOLEAN DEFAULT NULL,
   exemple BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Si la table membres existe déjà sans la colonne « boursier »,
+-- ajoute-la avec :
+--   ALTER TABLE membres ADD COLUMN IF NOT EXISTS boursier BOOLEAN DEFAULT NULL;
 
 CREATE INDEX IF NOT EXISTS membres_nom_idx ON membres (nom, prenom);
 
@@ -124,3 +135,115 @@ CREATE INDEX IF NOT EXISTS inscriptions_caravane_idx ON inscriptions (caravane_i
 CREATE UNIQUE INDEX IF NOT EXISTS inscriptions_actives_uniques
   ON inscriptions (caravane_id, telephone)
   WHERE statut IN ('inscrit', 'payé');
+
+-- Cotisations mensuelles du volet social : chaque mois, chaque membre
+-- paye 500 FCFA. Le bureau suit qui a payé dans l'espace bureau
+-- (onglet « Cotisations ») et coche « Payé » après vérification du
+-- paiement par Wave ou Orange Money. Le mois est écrit « AAAA-MM »,
+-- par exemple « 2026-11 » pour novembre 2026.
+CREATE TABLE IF NOT EXISTS cotisations (
+  id SERIAL PRIMARY KEY,
+  membre_id INTEGER NOT NULL REFERENCES membres(id) ON DELETE CASCADE,
+  mois TEXT NOT NULL,
+  montant_fcfa INTEGER NOT NULL DEFAULT 500,
+  statut TEXT NOT NULL DEFAULT 'en_attente'
+    CHECK (statut IN ('en_attente', 'paye')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (membre_id, mois)
+);
+
+CREATE INDEX IF NOT EXISTS cotisations_mois_idx ON cotisations (mois);
+
+-- Dons de tickets (volet social) : le bureau crée une campagne
+-- (nombre de tickets, lieu où les récupérer). L'annonce se fait par
+-- WhatsApp. Les gens qui en ont besoin s'inscrivent sur la partie
+-- publique du site, et le bureau choisit qui reçoit un ticket.
+CREATE TABLE IF NOT EXISTS dons_tickets (
+  id SERIAL PRIMARY KEY,
+  titre TEXT NOT NULL,
+  description TEXT,
+  nombre_tickets INTEGER NOT NULL,
+  lieu_retrait TEXT NOT NULL,
+  statut TEXT NOT NULL DEFAULT 'ouvert'
+    CHECK (statut IN ('ouvert', 'ferme')),
+  exemple BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Inscriptions aux dons de tickets : ce sont des gens dans le besoin.
+-- La liste des inscrits reste dans l'espace bureau seulement,
+-- elle n'est JAMAIS publique. La colonne « boursier » est remplie
+-- TOUTE SEULE par le site au moment de l'inscription : le site cherche
+-- le numéro de téléphone dans la table des membres et copie son statut
+-- boursier (vrai, faux, ou NULL si la personne n'est pas membre ou si
+-- son statut n'est pas renseigné). On ne demande JAMAIS « Es-tu
+-- boursier ? » dans le formulaire d'inscription aux tickets : la
+-- question est dans le formulaire principal d'inscription à l'amicale.
+-- La liste renvoyée au bureau est triée toute seule côté serveur :
+-- non-boursiers d'abord, puis non renseigné (NULL), puis boursiers.
+CREATE TABLE IF NOT EXISTS inscriptions_tickets (
+  id SERIAL PRIMARY KEY,
+  don_id INTEGER NOT NULL REFERENCES dons_tickets(id) ON DELETE CASCADE,
+  prenom TEXT NOT NULL,
+  nom TEXT NOT NULL,
+  telephone TEXT NOT NULL,
+  boursier BOOLEAN DEFAULT NULL,
+  statut TEXT NOT NULL DEFAULT 'inscrit'
+    CHECK (statut IN ('inscrit', 'attribue', 'refuse')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (don_id, telephone)
+);
+
+CREATE INDEX IF NOT EXISTS inscriptions_tickets_don_idx ON inscriptions_tickets (don_id);
+
+-- Petits réglages du site, une ligne par réglage. Pour l'instant,
+-- une seule ligne : le numéro Wave / Orange Money du trésorier,
+-- pour payer les cotisations (clé « numero_wave_tresorier »).
+CREATE TABLE IF NOT EXISTS parametres (
+  cle TEXT PRIMARY KEY,
+  valeur TEXT NOT NULL
+);
+
+-- Si ta base existe déjà (tables créées avant), colle ces 4 requêtes
+-- dans l'éditeur SQL de Neon pour ajouter les cotisations et les
+-- dons de tickets :
+--   CREATE TABLE IF NOT EXISTS cotisations (
+--     id SERIAL PRIMARY KEY,
+--     membre_id INTEGER NOT NULL REFERENCES membres(id) ON DELETE CASCADE,
+--     mois TEXT NOT NULL,
+--     montant_fcfa INTEGER NOT NULL DEFAULT 500,
+--     statut TEXT NOT NULL DEFAULT 'en_attente'
+--       CHECK (statut IN ('en_attente', 'paye')),
+--     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+--     UNIQUE (membre_id, mois)
+--   );
+--   CREATE TABLE IF NOT EXISTS dons_tickets (
+--     id SERIAL PRIMARY KEY,
+--     titre TEXT NOT NULL,
+--     description TEXT,
+--     nombre_tickets INTEGER NOT NULL,
+--     lieu_retrait TEXT NOT NULL,
+--     statut TEXT NOT NULL DEFAULT 'ouvert'
+--       CHECK (statut IN ('ouvert', 'ferme')),
+--     exemple BOOLEAN NOT NULL DEFAULT FALSE,
+--     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+--   );
+--   CREATE TABLE IF NOT EXISTS inscriptions_tickets (
+--     id SERIAL PRIMARY KEY,
+--     don_id INTEGER NOT NULL REFERENCES dons_tickets(id) ON DELETE CASCADE,
+--     prenom TEXT NOT NULL,
+--     nom TEXT NOT NULL,
+--     telephone TEXT NOT NULL,
+--     boursier BOOLEAN DEFAULT NULL,
+--     statut TEXT NOT NULL DEFAULT 'inscrit'
+--       CHECK (statut IN ('inscrit', 'attribue', 'refuse')),
+--     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+--     UNIQUE (don_id, telephone)
+--   );
+--   CREATE TABLE IF NOT EXISTS parametres (
+--     cle TEXT PRIMARY KEY,
+--     valeur TEXT NOT NULL
+--   );
+-- Si la table inscriptions_tickets existe déjà sans la colonne
+-- « boursier », ajoute-la avec :
+--   ALTER TABLE inscriptions_tickets ADD COLUMN IF NOT EXISTS boursier BOOLEAN DEFAULT NULL;

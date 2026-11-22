@@ -200,15 +200,16 @@ p {
 /* Navigation : bloc segmenté arrondi */
 .entete nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   width: 100%;
   padding: 4px;
   background: var(--bleu-clair);
-  border-radius: 999px;
+  border-radius: 24px;
 }
 
 .entete nav button {
-  flex: 1 1 auto;
+  flex: 1 1 40%;
   min-width: 0;
   min-height: 42px;
   padding: 8px 10px;
@@ -540,6 +541,13 @@ p {
   color: var(--texte-doux);
   margin: 0;
   font-size: 16px;
+}
+
+.carte-fonction .bouton-discret {
+  margin-top: 14px;
+  min-height: 42px;
+  padding: 8px 16px;
+  font-size: 14.5px;
 }
 
 /* Filières : cartes compactes */
@@ -960,6 +968,12 @@ p {
   color: #6b5310;
 }
 
+/* Prioritaire (non-boursier) pour les dons de tickets : or, comme l'accent du site. */
+.badge-prioritaire {
+  background: var(--or-clair);
+  color: #6b5310;
+}
+
 /* ---------- Formulaires ---------- */
 
 .formulaire {
@@ -1103,7 +1117,7 @@ p {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 8px;
+  margin-bottom: 18px;
 }
 
 .modale-entete h3 {
@@ -1485,6 +1499,8 @@ p {
   .entete nav {
     width: auto;
     margin-left: auto;
+    flex-wrap: nowrap;
+    border-radius: 999px;
   }
 
   .entete nav button {
@@ -1521,7 +1537,7 @@ p {
   }
 
   .cartes-fonctions {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .filieres {
@@ -1584,6 +1600,10 @@ p {
 @media (min-width: 1024px) {
   .conteneur {
     padding: 0 32px;
+  }
+
+  .cartes-fonctions {
+    grid-template-columns: repeat(4, 1fr);
   }
 
   .grille-bureau {

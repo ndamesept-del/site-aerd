@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Accueil from './pages/Accueil.jsx'
 import CaravanesPubliques from './pages/CaravanesPubliques.jsx'
+import CotisationsDons from './pages/CotisationsDons.jsx'
 import Bureau from './pages/Bureau.jsx'
 import Confidentialite from './pages/Confidentialite.jsx'
 import Conditions from './pages/Conditions.jsx'
@@ -13,6 +14,7 @@ const CHEMINS = {
   '/': 'accueil',
   '/index.html': 'accueil',
   '/caravanes': 'caravanes',
+  '/cotisations-dons': 'cotisations',
   '/bureau': 'bureau',
   '/confidentialite': 'confidentialite',
   '/conditions': 'conditions'
@@ -21,6 +23,7 @@ const CHEMINS = {
 const ADRESSES = {
   accueil: '/',
   caravanes: '/caravanes',
+  cotisations: '/cotisations-dons',
   bureau: '/bureau',
   confidentialite: '/confidentialite',
   conditions: '/conditions'
@@ -31,7 +34,7 @@ function pagePourAdresse() {
 }
 
 export default function App() {
-  const [page, setPage] = useState(() => pagePourAdresse()) // accueil | caravanes | bureau | confidentialite | conditions | introuvable
+  const [page, setPage] = useState(() => pagePourAdresse()) // accueil | caravanes | cotisations | bureau | confidentialite | conditions | introuvable
   const [modeLocal, setModeLocal] = useState(estModeLocal())
 
   useEffect(() => {
@@ -79,6 +82,13 @@ export default function App() {
             <button type="button" className={page === 'caravanes' ? 'actif' : ''} onClick={() => aller('caravanes')}>
               Caravanes
             </button>
+            <button
+              type="button"
+              className={page === 'cotisations' ? 'actif' : ''}
+              onClick={() => aller('cotisations')}
+            >
+              Cotisations et dons
+            </button>
             <button type="button" className={page === 'bureau' ? 'actif' : ''} onClick={() => aller('bureau')}>
               Espace bureau
             </button>
@@ -98,6 +108,7 @@ export default function App() {
       <main>
         {page === 'accueil' && <Accueil aller={aller} />}
         {page === 'caravanes' && <CaravanesPubliques />}
+        {page === 'cotisations' && <CotisationsDons />}
         {page === 'bureau' && <Bureau aller={aller} />}
         {page === 'confidentialite' && <Confidentialite aller={aller} />}
         {page === 'conditions' && <Conditions aller={aller} />}

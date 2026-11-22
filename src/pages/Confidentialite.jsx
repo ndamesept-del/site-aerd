@@ -15,12 +15,18 @@ export default function Confidentialite({ aller }) {
         <ul className="liste-simple">
           <li>
             <strong>Pour devenir membre :</strong> prénom, nom, numéro de téléphone, filière ou département,
-            niveau (L1 à M2), téléphone d’un parent en cas d’urgence, et si tu es de Diourbel ou de Bambey.
-            Quand le champ existera, le lieu où tu habites pendant tes études.
+            niveau (L1 à M2), téléphone d’un parent en cas d’urgence, si tu es boursier ou non, et si tu es
+            de Diourbel ou de Bambey. Quand le champ existera, le lieu où tu habites pendant tes études.
           </li>
           <li>
             <strong>Pour une caravane :</strong> prénom, nom et numéro de téléphone, pour t’inscrire et te
             retrouver dans la liste des inscrits.
+          </li>
+          <li>
+            <strong>Pour un don de tickets :</strong> prénom, nom et numéro de téléphone, pour t’inscrire à
+            une campagne de dons. Le site retrouve tout seul si tu es boursier ou non dans la liste des
+            membres, pour donner les tickets en priorité aux non-boursiers. Cette liste reste dans
+            l’espace bureau seulement, elle n’est jamais publique.
           </li>
           <li>
             <strong>Pour le bureau :</strong> prénom, nom, poste dans l’amicale et photo, pour présenter

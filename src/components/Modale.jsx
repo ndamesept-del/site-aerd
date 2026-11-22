@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 
 // Fenêtre pop-up (modale) du site AERD/UAM.
 //
@@ -9,6 +10,12 @@ import { useEffect, useRef } from 'react'
 // Tant qu'elle est ouverte, la page derrière ne défile plus.
 // Sur téléphone, la fenêtre arrive par le bas de l'écran ; sur
 // ordinateur, elle est centrée.
+//
+// La fenêtre est rendue dans un portail vers document.body : sans ça,
+// le `position: fixed` serait détourné par le `transform` au survol
+// des cartes (`.carte:hover { transform: translateY(-3px) }`), et la
+// modale apparaîtrait mal placée et coupée au lieu d'être centrée
+// sur tout l'écran.
 export default function Modale({ titre, onFermer, className = '', children }) {
   const boutonFermer = useRef(null)
 
@@ -36,7 +43,7 @@ export default function Modale({ titre, onFermer, className = '', children }) {
     }
   }, [onFermer])
 
-  return (
+  return createPortal(
     <div className="modale-fond" onClick={onFermer}>
       <div
         className={'modale ' + className}
@@ -59,6 +66,7 @@ export default function Modale({ titre, onFermer, className = '', children }) {
         </div>
         <div className="modale-corps">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

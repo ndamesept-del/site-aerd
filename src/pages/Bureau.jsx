@@ -5,6 +5,8 @@ import BureauMembres from './BureauMembres.jsx'
 import BureauChauffeurs from './BureauChauffeurs.jsx'
 import BureauCaravanes from './BureauCaravanes.jsx'
 import BureauOrganigramme from './BureauOrganigramme.jsx'
+import BureauCotisations from './BureauCotisations.jsx'
+import BureauDons from './BureauDons.jsx'
 
 function PageConnexion({ onConnecte }) {
   const [password, setPassword] = useState('')
@@ -59,7 +61,7 @@ function PageConnexion({ onConnecte }) {
 
 export default function Bureau({ aller }) {
   const [connecte, setConnecte] = useState(estConnecte())
-  const [onglet, setOnglet] = useState('tableau') // tableau | membres | chauffeurs | caravanes | bureau
+  const [onglet, setOnglet] = useState('tableau') // tableau | membres | chauffeurs | caravanes | bureau | cotisations | dons
 
   const quitter = () => {
     setToken(null)
@@ -114,6 +116,20 @@ export default function Bureau({ aller }) {
           >
             Organigramme
           </button>
+          <button
+            type="button"
+            className={onglet === 'cotisations' ? 'actif' : ''}
+            onClick={() => setOnglet('cotisations')}
+          >
+            Cotisations
+          </button>
+          <button
+            type="button"
+            className={onglet === 'dons' ? 'actif' : ''}
+            onClick={() => setOnglet('dons')}
+          >
+            Dons de tickets
+          </button>
         </div>
 
         {onglet === 'tableau' && <BureauDashboard allerOnglet={setOnglet} />}
@@ -121,6 +137,8 @@ export default function Bureau({ aller }) {
         {onglet === 'chauffeurs' && <BureauChauffeurs />}
         {onglet === 'caravanes' && <BureauCaravanes />}
         {onglet === 'bureau' && <BureauOrganigramme />}
+        {onglet === 'cotisations' && <BureauCotisations />}
+        {onglet === 'dons' && <BureauDons />}
       </section>
     </div>
   )
