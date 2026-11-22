@@ -1292,3 +1292,82 @@ p {
     grid-template-columns: 1fr 1fr 1fr;
   }
 }
+
+/* ---------- Rafraîchissement visuel ---------- */
+:root {
+  --fond: #f6f8fc;
+  --bordure: #e3e9f2;
+  --ombre: 0 12px 32px rgba(13, 42, 82, .08);
+  --ombre-forte: 0 22px 60px rgba(13, 42, 82, .18);
+}
+
+body { font-size: 17px; }
+.entete {
+  background: rgba(255,255,255,.94);
+  border-bottom: 1px solid rgba(18,58,110,.1);
+  box-shadow: 0 5px 24px rgba(13,42,82,.07);
+  backdrop-filter: blur(14px);
+}
+.marque img { border: 1px solid var(--bordure); border-radius: 16px; }
+.hero {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  color: #fff;
+  background: radial-gradient(ellipse at 82% 15%, rgba(63,117,189,.54), transparent 36%),
+    linear-gradient(122deg,#0d2a52 0%,#123a6e 58%,#1b4d86 100%);
+  border: 0;
+  padding: 58px 0 52px;
+}
+.hero::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 390px;
+  height: 390px;
+  right: -150px;
+  bottom: -245px;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 50%;
+  box-shadow: 0 0 0 36px rgba(255,255,255,.035), 0 0 0 76px rgba(255,255,255,.025);
+}
+.hero .conteneur { position: relative; z-index: 1; }
+.hero .sur-titre { color: #f2d77e; }
+.hero h1 {
+  max-width: 850px;
+  color: white;
+  font-size: clamp(2.55rem,6vw,4.8rem);
+  letter-spacing: -.055em;
+  line-height: 1.02;
+}
+.hero .souligne-or { color: #f2d77e; text-decoration: none; }
+.hero .chapeau { color: #dce8f7; }
+.hero .bouton { border-radius: 999px; }
+.hero .bouton-secondaire {
+  color: white;
+  background: rgba(255,255,255,.08);
+  border-color: rgba(255,255,255,.55);
+  box-shadow: none;
+}
+.hero .bouton-secondaire:hover { background: rgba(255,255,255,.16); border-color: white; }
+.hero .faits { color: #dce8f7; }
+.hero .faits strong { color: white; background: rgba(255,255,255,.12); }
+.section { padding-top: 58px; padding-bottom: 58px; }
+.carte { border-radius: 22px; }
+.carte-bureau { border-radius: 22px; box-shadow: var(--ombre); }
+.bouton { border-radius: 999px; }
+
+@media (max-width: 719px) {
+  .entete-contenu { gap: 12px; }
+  .marque img { width: 46px; height: 46px; }
+  .marque .nom { font-size: 19px; }
+  .marque .sous-titre { font-size: 12px; }
+  .hero { padding: 48px 0 42px; }
+  .hero .chapeau { font-size: 18px; }
+  .hero .actions { gap: 10px; }
+  .hero .bouton { min-height: 52px; padding: 12px 18px; font-size: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+}
