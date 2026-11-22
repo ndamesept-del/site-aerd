@@ -46,6 +46,7 @@ function FormulaireBureau({ membre, onTermine, onAnnuler }) {
     prenom: membre ? membre.prenom : '',
     nom: membre ? membre.nom : '',
     poste: membre ? membre.poste : '',
+    telephone: membre ? membre.telephone || '' : '',
     ordre: membre ? String(membre.ordre) : '',
     photo: membre ? membre.photo || '' : ''
   })
@@ -75,6 +76,7 @@ function FormulaireBureau({ membre, onTermine, onAnnuler }) {
         nom: form.nom,
         poste: form.poste,
         photo: form.photo,
+        telephone: form.telephone,
         ordre: form.ordre === '' ? 0 : Number(form.ordre)
       }
       if (membre) await api.modifierBureau({ id: membre.id, ...donnees })
@@ -150,6 +152,17 @@ function FormulaireBureau({ membre, onTermine, onAnnuler }) {
             ))}
           </datalist>
           <p className="aide">Choisis un poste dans la liste, ou écris-en un autre.</p>
+        </div>
+        <div className="champ">
+          <label htmlFor="b-telephone">Numéro de téléphone</label>
+          <input
+            id="b-telephone"
+            type="tel"
+            value={form.telephone}
+            onChange={changer('telephone')}
+            placeholder="Ex : 77 936 03 11"
+          />
+          <p className="aide">Pour le président, ce numéro s’affiche sur la page d’accueil (contact du président).</p>
         </div>
         <div className="champ">
           <label htmlFor="b-ordre">Place dans l’organigramme</label>

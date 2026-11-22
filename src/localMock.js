@@ -7,7 +7,18 @@
 // ("change-moi"). Sur le vrai site, le mot de passe vient de la variable
 // d'environnement BUREAU_PASSWORD (voir README).
 
-import { desistementOuvert, lieuDepartParDefaut } from './data.js'
+import { desistementOuvert, lieuDepartParDefaut, formaterNumeroCarte } from './data.js'
+
+// Prochain numéro de carte de membre : AERD-2026-001, AERD-2026-002, ...
+function prochainNumeroCarteLocal(etat) {
+  const annee = new Date().getFullYear()
+  let n = 0
+  for (const m of etat.membres) {
+    const match = new RegExp('^AERD-' + annee + '-(\\d+)$').exec(m.numero_carte || '')
+    if (match) n = Math.max(n, parseInt(match[1], 10))
+  }
+  return formaterNumeroCarte(annee, n + 1)
+}
 
 const CLE = 'aerd-local-v1'
 const MOT_DE_PASSE_DEV = 'change-moi'
@@ -293,6 +304,16 @@ export const local = {
         sauver(etat)
         return { membre }
       }
+      // Marquer la carte de membre payée (ou remettre en attente).
+      if (corps.action === 'carte-payee') {
+        const membreTrouve = etat.membres.find((m) => m.id === Number(corps.id))
+        if (!membreTrouve) erreur('Membre introuvable.')
+        const payee = corps.payee === true || corps.payee === 'true'
+        if (payee && !membreTrouve.numero_carte) membreTrouve.numero_carte = prochainNumeroCarteLocal(etat)
+        membreTrouve.carte_payee = payee
+        sauver(etat)
+        return { membre: membreTrouve }
+      }
       const membre = {
         id: etat.seq.membre++,
         prenom: nettoyerTexte(corps.prenom),
@@ -303,6 +324,8 @@ export const local = {
         niveau: nettoyerTexte(corps.niveau),
         origine: nettoyerTexte(corps.origine),
         boursier,
+        numero_carte: prochainNumeroCarteLocal(etat),
+        carte_payee: false,
         exemple: false
       }
       if (!membre.prenom || !membre.nom || !membre.telephone || !membre.ufr_departement || !membre.niveau || !membre.origine) {
@@ -347,7 +370,9 @@ export const local = {
       if ((opts.methode || 'GET') === 'GET') {
         const liste = [...etat.bureau].sort((a, b) => a.ordre - b.ordre || a.nom.localeCompare(b.nom, 'fr'))
         const actuel = (m) => ({ ...m, ancien: !!m.ancien })
-        const anciens = liste.filter((m) => m.ancien).map((m) => ({ ...actuel(m), photo: '' }))
+        // Le téléphone ne sort en public que pour le président ; pour
+        // les anciens, on ne le renvoie jamais.
+        const anciens = liste.filter((m) => m.ancien).map((m) => ({ ...actuel(m), photo: '', telephone: '' }))
         return { bureau: liste.filter((m) => !m.ancien).map(actuel), anciens }
       }
       exigerAuth(opts)
@@ -359,6 +384,7 @@ export const local = {
           if (!membre) erreur('Membre du bureau introuvable.')
           membre.ancien = true
           membre.photo = ''
+          membre.telephone = ''
           sauver(etat)
           return { membre: { ...membre } }
         }
@@ -368,6 +394,7 @@ export const local = {
           nom: nettoyerTexte(corps.nom),
           poste: nettoyerTexte(corps.poste),
           photo: String(corps.photo || ''),
+          telephone: nettoyerTexte(corps.telephone),
           ordre: Number.isFinite(Number(corps.ordre)) ? Math.trunc(Number(corps.ordre)) : 0,
           ancien: false,
           exemple: false
@@ -391,6 +418,7 @@ export const local = {
         membre.nom = nom
         membre.poste = poste
         membre.photo = photo
+        membre.telephone = nettoyerTexte(corps.telephone)
         membre.ordre = Number.isFinite(Number(corps.ordre)) ? Math.trunc(Number(corps.ordre)) : 0
         sauver(etat)
         return { membre }
@@ -572,6 +600,24 @@ export const local = {
       etat.parametres.numero_wave_tresorier = numero
       sauver(etat)
       return { numero_wave_tresorier: numero }
+    }
+
+    if (nom === 'ma-carte') {
+      const telephone = nettoyerTexte(corps.telephone).replace(/\s/g, '')
+      if (telephone.replace(/\D/g, '').length < 9) erreur('Le numéro de téléphone semble incomplet.')
+      const trouve = etat.membres.find((m) => String(m.telephone).replace(/\s/g, '') === telephone)
+      if (!trouve) {
+        erreur('Numéro introuvable. Vérifie ton numéro, ou inscris-toi d’abord à l’amicale : le bureau t’ajoute ensuite à la liste des membres.')
+      }
+      return {
+        membre: {
+          id: trouve.id,
+          prenom: trouve.prenom,
+          nom: trouve.nom,
+          numero_carte: trouve.numero_carte || null,
+          carte_payee: !!trouve.carte_payee
+        }
+      }
     }
 
     if (nom === 'stats') {

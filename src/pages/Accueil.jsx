@@ -229,6 +229,12 @@ export default function Accueil({ aller }) {
                         {m.prenom} {m.nom}
                       </h3>
                       <p className="poste-bureau">{m.poste}</p>
+                      {m.poste === 'Président' && m.telephone && (
+                        <p className="contact-bureau">
+                          Contact du président :{' '}
+                          <a href={'tel:' + String(m.telephone).replace(/\s/g, '')}>{m.telephone}</a>
+                        </p>
+                      )}
                     </article>
                   ))}
                 </div>

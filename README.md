@@ -77,6 +77,9 @@ dans l'éditeur SQL de Neon, pour ajouter ce qui manque :
 ```sql
 ALTER TABLE caravanes ADD COLUMN IF NOT EXISTS montant_fcfa INTEGER;
 ALTER TABLE caravanes ADD COLUMN IF NOT EXISTS lieu_depart TEXT;
+ALTER TABLE membres ADD COLUMN IF NOT EXISTS numero_carte TEXT UNIQUE;
+ALTER TABLE membres ADD COLUMN IF NOT EXISTS carte_payee BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE bureau ADD COLUMN IF NOT EXISTS telephone TEXT;
 
 CREATE TABLE IF NOT EXISTS bureau (
   id SERIAL PRIMARY KEY,
@@ -84,16 +87,32 @@ CREATE TABLE IF NOT EXISTS bureau (
   nom TEXT NOT NULL,
   poste TEXT NOT NULL,
   photo TEXT,
+  telephone TEXT,
   ordre INTEGER NOT NULL DEFAULT 0,
   exemple BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-INSERT INTO bureau (prenom, nom, poste, ordre) VALUES ('Mame Cheikh', 'Niang', 'Président', 1);
+INSERT INTO bureau (prenom, nom, poste, telephone, ordre) VALUES ('Cheikh', 'Niang', 'Président', '77 936 03 11', 1);
+```
+
+Si le président est déjà dans la base avec l'ancien prénom et sans numéro,
+corrige-le avec cette requête (après l'ALTER TABLE ci-dessus) :
+
+```sql
+UPDATE bureau SET prenom = 'Cheikh', telephone = '77 936 03 11' WHERE poste = 'Président';
 ```
 
 La dernière ligne ajoute le président actuel à l'organigramme (sans photo pour
 l'instant : il l'ajoutera lui-même dans l'espace bureau, onglet « Organigramme »).
+
+**Cartes de membres (1000 FCFA)** : chaque membre a un numéro de carte (AERD-2026-001, AERD-2026-002, ...)
+attribué tout seul à son ajout. Le membre paie 1000 FCFA par Wave ou Orange Money au trésorier (le numéro
+est celui des paramètres, onglet « Cotisations »), le bureau confirme le paiement dans l'onglet « Membres »
+(bouton « Marquer Carte payée »), puis le membre retrouve sa carte sur la page publique « Ma carte de membre »
+(il tape son numéro de téléphone) et la télécharge en image PNG, avec son nom, son numéro et un QR code qui
+regroupe son nom et son numéro. Pas de photo sur la carte (décision du bureau, novembre 2026). Le numéro du
+président s'affiche sur la page d'accueil, sous sa carte (contact du président).
 
 **Cotisations et dons de tickets (volet social)** : si ta base existe déjà, colle
 aussi ces 4 requêtes dans l'éditeur SQL de Neon :

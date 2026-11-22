@@ -90,6 +90,7 @@ async function appel(nom, opts = {}) {
 export const api = {
   // Public
   caravanesPubliques: () => appel('caravanes'),
+  maCarte: (telephone) => appel('ma-carte', { methode: 'POST', corps: { telephone } }),
   inscrire: (donnees) => appel('inscriptions', { methode: 'POST', corps: { action: 'inscrire', ...donnees } }),
   desister: (donnees) => appel('inscriptions', { methode: 'POST', corps: { action: 'desister', ...donnees } }),
 
@@ -104,6 +105,8 @@ export const api = {
   caravanesBureau: () => appel('caravanes', { auth: true, caravanes: true, params: { details: '1' } }),
   creerCaravane: (donnees) => appel('caravanes', { methode: 'POST', corps: donnees, auth: true, caravanes: true }),
   membres: (q = '') => appel('membres', { auth: true, params: q ? { q } : null }),
+  marquerCartePayee: (id, payee) =>
+    appel('membres', { methode: 'POST', corps: { action: 'carte-payee', id, payee }, auth: true }),
   ajouterMembre: (donnees) => appel('membres', { methode: 'POST', corps: donnees, auth: true }),
   modifierMembre: (donnees) => appel('membres', { methode: 'PUT', corps: donnees, auth: true }),
   chauffeurs: (q = '') => appel('chauffeurs', { auth: true, params: q ? { q } : null }),

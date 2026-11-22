@@ -53,12 +53,15 @@ export function formatDate(dateStr) {
   const jour = String(dateStr).slice(0, 10)
   const d = new Date(jour + 'T12:00:00')
   if (Number.isNaN(d.getTime())) return String(dateStr)
-  return d.toLocaleDateString('fr-FR', {
+  const texte = d.toLocaleDateString('fr-FR', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
     year: 'numeric'
   })
+  // Le jour commence par une majuscule : « Dimanche 29 novembre 2026 »,
+  // pas « dimanche 29 novembre 2026 ».
+  return texte.charAt(0).toUpperCase() + texte.slice(1)
 }
 
 // Lieu de départ d'une caravane, selon sa destination.
@@ -75,6 +78,22 @@ export function lieuDepartParDefaut(destination) {
 // Petit nettoyage d'un numéro de téléphone (espaces en trop retirés)
 export function normaliserTelephone(valeur) {
   return String(valeur || '').replace(/\s+/g, ' ').trim()
+}
+
+// Carte de membre : prix décidé par le bureau (1000 FCFA, novembre 2026).
+// Le membre paie par Wave ou Orange Money au trésorier, le bureau confirme
+// le paiement, puis le membre télécharge sa carte avec QR code.
+export const PRIX_CARTE_FCFA = 1000
+
+// Numéro de carte : AERD-2026-001, AERD-2026-002, etc. L'année est celle
+// de l'attribution, le numéro est séquentiel dans l'année.
+export function formaterNumeroCarte(annee, numero) {
+  return 'AERD-' + annee + '-' + String(numero).padStart(3, '0')
+}
+
+// Texte du QR code de la carte : le nom et le numéro du membre.
+export function texteQRCarte(membre) {
+  return 'AERD/UAM - ' + membre.prenom + ' ' + membre.nom + ' - ' + membre.numero_carte
 }
 
 // Cotisation mensuelle du volet social : chaque membre paye ce montant

@@ -32,6 +32,9 @@ function lignePublique(ligne) {
     // Un ancien membre n'a plus de photo : on ne la renvoie jamais,
     // même si elle était encore en base.
     photo: ligne.ancien ? '' : ligne.photo || '',
+    // Le téléphone ne s'affiche en public que pour le président ; pour
+    // les anciens, on ne le renvoie jamais.
+    telephone: ligne.ancien ? '' : ligne.telephone || '',
     ordre: ligne.ordre,
     ancien: !!ligne.ancien,
     exemple: !!ligne.exemple
@@ -45,7 +48,7 @@ export async function handler(event) {
   try {
     if (event.httpMethod === 'GET') {
       const res = await pool.query(
-        'SELECT id, prenom, nom, poste, photo, ordre, ancien, exemple FROM bureau ORDER BY ordre ASC, nom ASC, prenom ASC'
+        'SELECT id, prenom, nom, poste, photo, telephone, ordre, ancien, exemple FROM bureau ORDER BY ordre ASC, nom ASC, prenom ASC'
       )
       const tous = res.rows.map(lignePublique)
       return reponse(200, {
@@ -65,8 +68,8 @@ export async function handler(event) {
         const id = Number(corps.id)
         if (!id) return erreur('Membre du bureau introuvable.', 400)
         const res = await pool.query(
-          `UPDATE bureau SET ancien = TRUE, photo = NULL WHERE id = $1
-           RETURNING id, prenom, nom, poste, photo, ordre, ancien, exemple`,
+          `UPDATE bureau SET ancien = TRUE, photo = NULL, telephone = NULL WHERE id = $1
+           RETURNING id, prenom, nom, poste, photo, telephone, ordre, ancien, exemple`,
           [id]
         )
         if (res.rows.length === 0) return erreur('Membre du bureau introuvable.', 404)
@@ -76,6 +79,7 @@ export async function handler(event) {
       const nom = nettoyerTexte(corps.nom)
       const poste = nettoyerTexte(corps.poste)
       const photo = String(corps.photo || '')
+      const telephone = nettoyerTexte(corps.telephone)
       const ordre = Number.isFinite(Number(corps.ordre)) ? Math.trunc(Number(corps.ordre)) : 0
       if (!prenom || !nom || !poste) {
         return erreur('Prénom, nom et poste sont obligatoires.', 400)
@@ -87,8 +91,8 @@ export async function handler(event) {
         return erreur('La photo est trop lourde. Choisis une photo plus petite.', 400)
       }
       const ins = await pool.query(
-        'INSERT INTO bureau (prenom, nom, poste, photo, ordre) VALUES ($1, $2, $3, $4, $5) RETURNING id, prenom, nom, poste, photo, ordre, ancien, exemple',
-        [prenom, nom, poste, photo || null, ordre]
+        'INSERT INTO bureau (prenom, nom, poste, photo, telephone, ordre) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, prenom, nom, poste, photo, telephone, ordre, ancien, exemple',
+        [prenom, nom, poste, photo || null, telephone || null, ordre]
       )
       return reponse(201, { membre: lignePublique(ins.rows[0]) })
     }
@@ -99,6 +103,7 @@ export async function handler(event) {
       const nom = nettoyerTexte(corps.nom)
       const poste = nettoyerTexte(corps.poste)
       const photo = String(corps.photo || '')
+      const telephone = nettoyerTexte(corps.telephone)
       const ordre = Number.isFinite(Number(corps.ordre)) ? Math.trunc(Number(corps.ordre)) : 0
       if (!id || !prenom || !nom || !poste) {
         return erreur('Prénom, nom et poste sont obligatoires.', 400)
@@ -110,9 +115,9 @@ export async function handler(event) {
         return erreur('La photo est trop lourde. Choisis une photo plus petite.', 400)
       }
       const res = await pool.query(
-        `UPDATE bureau SET prenom = $2, nom = $3, poste = $4, photo = $5, ordre = $6
-         WHERE id = $1 RETURNING id, prenom, nom, poste, photo, ordre, ancien, exemple`,
-        [id, prenom, nom, poste, photo || null, ordre]
+        `UPDATE bureau SET prenom = $2, nom = $3, poste = $4, photo = $5, telephone = $6, ordre = $7
+         WHERE id = $1 RETURNING id, prenom, nom, poste, photo, telephone, ordre, ancien, exemple`,
+        [id, prenom, nom, poste, photo || null, telephone || null, ordre]
       )
       if (res.rows.length === 0) return erreur('Membre du bureau introuvable.', 404)
       return reponse(200, { membre: lignePublique(res.rows[0]) })

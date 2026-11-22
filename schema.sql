@@ -30,9 +30,19 @@ CREATE TABLE IF NOT EXISTS membres (
   -- renseigner le statut pour chaque membre, dans l'onglet « Membres ».
   -- Pour les dons de tickets, les non-boursiers sont prioritaires.
   boursier BOOLEAN DEFAULT NULL,
+  -- Numéro de carte de membre (AERD-2026-001, ...) et paiement de la carte
+  -- (1000 FCFA, payée par Wave ou Orange Money au trésorier, confirmée par
+  -- le bureau). Le numéro est attribué à l'ajout du membre, ou quand le
+  -- bureau confirme le paiement si le membre n'en avait pas encore.
+  numero_carte TEXT UNIQUE,
+  carte_payee BOOLEAN NOT NULL DEFAULT FALSE,
   exemple BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Si la table membres existe déjà sans ces colonnes, ajoute-les avec :
+--   ALTER TABLE membres ADD COLUMN IF NOT EXISTS numero_carte TEXT UNIQUE;
+--   ALTER TABLE membres ADD COLUMN IF NOT EXISTS carte_payee BOOLEAN NOT NULL DEFAULT FALSE;
 
 -- Si la table membres existe déjà sans la colonne « boursier »,
 -- ajoute-la avec :
@@ -93,6 +103,9 @@ CREATE TABLE IF NOT EXISTS bureau (
   nom TEXT NOT NULL,
   poste TEXT NOT NULL,
   photo TEXT,
+  -- Numéro de téléphone du membre du bureau. Il s'affiche sur la page
+  -- d'accueil pour le président seulement (contact du président).
+  telephone TEXT,
   ordre INTEGER NOT NULL DEFAULT 0,
   ancien BOOLEAN NOT NULL DEFAULT FALSE,
   exemple BOOLEAN NOT NULL DEFAULT FALSE,
@@ -107,6 +120,12 @@ CREATE INDEX IF NOT EXISTS bureau_ordre_idx ON bureau (ordre, nom);
 -- déjà sans cette colonne, ajoute-la avec :
 --   ALTER TABLE bureau ADD COLUMN IF NOT EXISTS ancien BOOLEAN NOT NULL DEFAULT FALSE;
 
+-- Si la table bureau existe déjà sans la colonne « telephone »,
+-- ajoute-la avec :
+--   ALTER TABLE bureau ADD COLUMN IF NOT EXISTS telephone TEXT;
+-- Puis corrige le nom du président et ajoute son numéro avec :
+--   UPDATE bureau SET prenom = 'Cheikh', telephone = '77 936 03 11' WHERE poste = 'Président';
+
 -- Si la table bureau n'existe pas encore dans ta base, crée-la et
 -- ajoute le président actuel avec ces deux requêtes :
 --   CREATE TABLE bureau (
@@ -120,7 +139,7 @@ CREATE INDEX IF NOT EXISTS bureau_ordre_idx ON bureau (ordre, nom);
 --     exemple BOOLEAN NOT NULL DEFAULT FALSE,
 --     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 --   );
---   INSERT INTO bureau (prenom, nom, poste, ordre) VALUES ('Mame Cheikh', 'Niang', 'Président', 1);
+--   INSERT INTO bureau (prenom, nom, poste, telephone, ordre) VALUES ('Cheikh', 'Niang', 'Président', '77 936 03 11', 1);
 
 CREATE TABLE IF NOT EXISTS inscriptions (
   id SERIAL PRIMARY KEY,

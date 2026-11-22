@@ -164,6 +164,25 @@ export default function BureauMembres() {
     charger(recherche)
   }
 
+  // Carte de membre (1000 FCFA) : le membre paie par Wave ou Orange Money
+  // au trésorier, le bureau confirme ici. Le numéro de carte est attribué
+  // tout seul (AERD-2026-001, ...).
+  const marquerCarte = async (m, payee) => {
+    setErreur('')
+    setMessage('')
+    try {
+      await api.marquerCartePayee(m.id, payee)
+      setMessage(
+        payee
+          ? 'Carte de membre payée pour ' + m.prenom + ' ' + m.nom + ' : il peut télécharger sa carte.'
+          : 'Paiement de la carte retiré pour ' + m.prenom + ' ' + m.nom + '.'
+      )
+      charger(recherche)
+    } catch (err) {
+      setErreur(err.message || 'Une erreur est survenue.')
+    }
+  }
+
   return (
     <div>
       <h3>Membres de l’amicale</h3>
@@ -239,10 +258,31 @@ export default function BureauMembres() {
                 {m.ufr_departement} · {m.niveau} · {m.origine}
               </div>
               {m.telephone_parent && <div className="details">Parent (urgence) : {m.telephone_parent}</div>}
+              <div className="details">
+                Carte de membre : {m.numero_carte || 'pas encore de numéro'} ·{' '}
+                {m.carte_payee ? (
+                  <span className="badge badge-paye">Payée</span>
+                ) : (
+                  <span className="badge badge-inscrit">Non payée</span>
+                )}
+              </div>
               <div className="actions-ligne">
                 <button type="button" className="bouton-discret" onClick={() => setMembreAModifier(m)}>
                   Modifier
                 </button>
+                {m.carte_payee ? (
+                  <button
+                    type="button"
+                    className="bouton-discret bouton-danger"
+                    onClick={() => marquerCarte(m, false)}
+                  >
+                    Retirer le paiement de la carte
+                  </button>
+                ) : (
+                  <button type="button" className="bouton-discret" onClick={() => marquerCarte(m, true)}>
+                    Marquer « Carte payée » (1000 FCFA)
+                  </button>
+                )}
               </div>
             </div>
           ))}
