@@ -29,7 +29,20 @@ export function estConnecte() {
   return !!getToken()
 }
 
-async function appelFonction(nom, { methode = 'GET', corps = null, auth = false, params = null } = {}) {
+function getTokenCaravanes() {
+  return localStorage.getItem('aerd-caravanes-token') || ''
+}
+
+export function setTokenCaravanes(jeton) {
+  if (jeton) localStorage.setItem('aerd-caravanes-token', jeton)
+  else localStorage.removeItem('aerd-caravanes-token')
+}
+
+export function estConnecteCaravanes() {
+  return !!getTokenCaravanes()
+}
+
+async function appelFonction(nom, { methode = 'GET', corps = null, auth = false, params = null, caravanes = false } = {}) {
   let url = FN + '/' + nom
   if (params) {
     const qs = new URLSearchParams(params)
@@ -37,6 +50,7 @@ async function appelFonction(nom, { methode = 'GET', corps = null, auth = false,
   }
   const options = { method: methode, headers: { 'Content-Type': 'application/json' } }
   if (auth && getToken()) options.headers.Authorization = 'Bearer ' + getToken()
+  if (caravanes && getTokenCaravanes()) options.headers['X-Jeton-Caravanes'] = getTokenCaravanes()
   if (corps) options.body = JSON.stringify(corps)
   const res = await fetch(url, options)
   const texte = await res.text()
@@ -58,7 +72,7 @@ async function appelFonction(nom, { methode = 'GET', corps = null, auth = false,
 }
 
 async function appel(nom, opts = {}) {
-  if (modeLocal) return local.appel(nom, { ...opts, token: getToken() })
+  if (modeLocal) return local.appel(nom, { ...opts, token: getToken(), jetonCaravanes: getTokenCaravanes() })
   if (!import.meta.env.DEV) return appelFonction(nom, opts)
   try {
     return await appelFonction(nom, opts)
@@ -67,7 +81,7 @@ async function appel(nom, opts = {}) {
     if (e.status === 404 || e.status === 405 || /fetch|JSON|Unexpected token/i.test(e.message)) {
       modeLocal = true
       window.dispatchEvent(new Event('aerd-mode-local'))
-      return local.appel(nom, { ...opts, token: getToken() })
+      return local.appel(nom, { ...opts, token: getToken(), jetonCaravanes: getTokenCaravanes() })
     }
     throw e
   }
@@ -82,10 +96,13 @@ export const api = {
   // Bureau (connexion)
   login: (password) => appel('login', { methode: 'POST', corps: { password } }),
 
+  // Caravanes (connexion séparée, administrateur seulement)
+  caravanesLogin: (password) => appel('caravanes-login', { methode: 'POST', corps: { password } }),
+
   // Bureau (données)
   stats: () => appel('stats', { auth: true }),
-  caravanesBureau: () => appel('caravanes', { auth: true, params: { details: '1' } }),
-  creerCaravane: (donnees) => appel('caravanes', { methode: 'POST', corps: donnees, auth: true }),
+  caravanesBureau: () => appel('caravanes', { auth: true, caravanes: true, params: { details: '1' } }),
+  creerCaravane: (donnees) => appel('caravanes', { methode: 'POST', corps: donnees, auth: true, caravanes: true }),
   membres: (q = '') => appel('membres', { auth: true, params: q ? { q } : null }),
   ajouterMembre: (donnees) => appel('membres', { methode: 'POST', corps: donnees, auth: true }),
   modifierMembre: (donnees) => appel('membres', { methode: 'PUT', corps: donnees, auth: true }),
@@ -98,9 +115,9 @@ export const api = {
   supprimerBureau: (id) => appel('bureau', { methode: 'DELETE', corps: { id }, auth: true }),
   passerAncien: (id) => appel('bureau', { methode: 'POST', corps: { action: 'passer-ancien', id }, auth: true }),
   marquerPaye: (inscription_id) =>
-    appel('inscriptions', { methode: 'POST', corps: { action: 'marquer-paye', inscription_id }, auth: true }),
+    appel('inscriptions', { methode: 'POST', corps: { action: 'marquer-paye', inscription_id }, auth: true, caravanes: true }),
   retirerInscription: (inscription_id) =>
-    appel('inscriptions', { methode: 'POST', corps: { action: 'retirer', inscription_id }, auth: true }),
+    appel('inscriptions', { methode: 'POST', corps: { action: 'retirer', inscription_id }, auth: true, caravanes: true }),
 
   // Cotisations et dons de tickets (volet social)
   cotisations: (mois) => appel('cotisations', { auth: true, params: { mois } }),

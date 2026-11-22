@@ -183,9 +183,19 @@ function CarteCaravane({ caravane, recharger }) {
   return (
     <article className="carte carte-caravane">
       <h3>{caravane.destination}</h3>
-      <p className="date">
-        {formatDate(caravane.date_depart)} à {formatHeure(caravane.heure_depart)}
-      </p>
+      <div className="bloc-depart">
+        {caravane.lieu_depart && (
+          <p className="ligne">
+            <span className="etiquette">Lieu de départ :</span> <strong>{caravane.lieu_depart}</strong>
+          </p>
+        )}
+        <p className="ligne">
+          <span className="etiquette">Date de départ :</span> <strong>{formatDate(caravane.date_depart)}</strong>
+        </p>
+        <p className="ligne">
+          <span className="etiquette">Heure de départ :</span> <strong>{formatHeure(caravane.heure_depart)}</strong>
+        </p>
+      </div>
       {caravane.montant_fcfa != null && (
         <p className="montant">{formatMontant(caravane.montant_fcfa)} par place</p>
       )}
@@ -293,6 +303,19 @@ function CarteCaravane({ caravane, recharger }) {
           <p className="message-ok">
             Merci {prenomInscrit}, ton inscription est bien enregistrée pour la caravane de {caravane.destination}.
           </p>
+      <div className="bloc-depart">
+        {caravane.lieu_depart && (
+          <p className="ligne">
+            <span className="etiquette">Lieu de départ :</span> <strong>{caravane.lieu_depart}</strong>
+          </p>
+        )}
+        <p className="ligne">
+          <span className="etiquette">Date de départ :</span> <strong>{formatDate(caravane.date_depart)}</strong>
+        </p>
+        <p className="ligne">
+          <span className="etiquette">Heure de départ :</span> <strong>{formatHeure(caravane.heure_depart)}</strong>
+        </p>
+      </div>
           <h3>Maintenant, paye ta place</h3>
           <div className="encart-wave">
             <div>{textePaiement(caravane)}</div>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { api, setToken, estConnecte } from '../api.js'
+import { api, setToken, estConnecte, setTokenCaravanes, estConnecteCaravanes } from '../api.js'
 import BureauDashboard from './BureauDashboard.jsx'
 import BureauMembres from './BureauMembres.jsx'
 import BureauChauffeurs from './BureauChauffeurs.jsx'
@@ -56,12 +56,60 @@ function PageConnexion({ onConnecte }) {
   )
 }
 
+function PageConnexionCaravanes({ onConnecte }) {
+  const [password, setPassword] = useState('')
+  const [envoi, setEnvoi] = useState(false)
+  const [erreur, setErreur] = useState('')
+
+  const envoyer = async (e) => {
+    e.preventDefault()
+    setErreur('')
+    setEnvoi(true)
+    try {
+      const data = await api.caravanesLogin(password)
+      setTokenCaravanes(data.token)
+      onConnecte()
+    } catch {
+      setErreur('Mot de passe incorrect. Réessaie.')
+    } finally {
+      setEnvoi(false)
+    }
+  }
+
+  return (
+    <div>
+      <h3>Caravanes, accès protégé</h3>
+      <p>Seul l’administrateur connaît ce mot de passe. Sans lui, on ne peut ni créer une caravane, ni valider un paiement.</p>
+      <form onSubmit={envoyer}>
+        {erreur && <p className="message-erreur">{erreur}</p>}
+        <div className="champ">
+          <label htmlFor="mot-de-passe-caravanes">Mot de passe des caravanes</label>
+          <input
+            id="mot-de-passe-caravanes"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            required
+          />
+        </div>
+        <button type="submit" className="bouton bouton-bleu bouton-plein" disabled={envoi}>
+          {envoi ? 'Vérification…' : 'Ouvrir l’onglet Caravanes'}
+        </button>
+      </form>
+    </div>
+  )
+}
+
 export default function Bureau({ aller }) {
   const [connecte, setConnecte] = useState(estConnecte())
+  const [caravanesConnecte, setCaravanesConnecte] = useState(estConnecteCaravanes())
   const [onglet, setOnglet] = useState('tableau') // tableau | membres | chauffeurs | caravanes | bureau | cotisations | dons
 
   const quitter = () => {
     setToken(null)
+    setTokenCaravanes(null)
+    setCaravanesConnecte(false)
     setConnecte(false)
     aller('accueil')
   }
@@ -132,7 +180,12 @@ export default function Bureau({ aller }) {
         {onglet === 'tableau' && <BureauDashboard allerOnglet={setOnglet} />}
         {onglet === 'membres' && <BureauMembres />}
         {onglet === 'chauffeurs' && <BureauChauffeurs />}
-        {onglet === 'caravanes' && <BureauCaravanes />}
+        {onglet === 'caravanes' &&
+          (caravanesConnecte ? (
+            <BureauCaravanes />
+          ) : (
+            <PageConnexionCaravanes onConnecte={() => setCaravanesConnecte(true)} />
+          ))}
         {onglet === 'bureau' && <BureauOrganigramme />}
         {onglet === 'cotisations' && <BureauCotisations />}
         {onglet === 'dons' && <BureauDons />}

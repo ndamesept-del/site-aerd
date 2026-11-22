@@ -4,12 +4,23 @@
 //   Public : les caravanes à venir, avec chauffeur, compteurs d'inscrits
 //   et de payés, et la liste publique des inscrits (prénom, nom et statut
 //   seulement — JAMAIS de numéro de téléphone, les numéros restent privés).
-//   Avec ?details=1 et un jeton bureau : toutes les caravanes, avec la liste des inscriptions.
-// POST /.netlify/functions/caravanes  (bureau)
-//   Créer une caravane : { date_depart, destination, numero_wave_responsable,
-//   montant_fcfa? , chauffeur_id? , nouveau_chauffeur? { prenom, nom, telephone } }
+//   Avec ?details=1 et le jeton caravanes : toutes les caravanes, avec la liste des inscriptions.
+// POST /.netlify/functions/caravanes  (jeton caravanes)
+//   Créer une caravane : { date_depart, destination, lieu_depart?,
+//   numero_wave_responsable, montant_fcfa? , chauffeur_id? ,
+//   nouveau_chauffeur? { prenom, nom, telephone } }
 import { getPool, reponse, erreur, pasDeBase, lireCorps, nettoyerTexte } from './db.js'
-import { jetonValide, nonAutorise } from './auth.js'
+import { jetonCaravanesValide, nonAutoriseCaravanes } from './auth.js'
+
+// Lieu de départ par défaut, selon la destination (même règle que
+// lieuDepartParDefaut dans src/data.js, recopiée ici car les fonctions
+// Netlify ne partagent pas le code de src).
+function lieuDepartParDefaut(destination) {
+  const d = String(destination || '').toLowerCase()
+  if (d.includes('dakar') || d.includes('diamniadio')) return 'Gouvernance de Diourbel'
+  if (d.includes('diourbel') || d.includes('bambey')) return 'UAM, Diamniadio'
+  return ''
+}
 
 function avecChauffeur(ligne) {
   return {
@@ -17,6 +28,7 @@ function avecChauffeur(ligne) {
     date_depart: ligne.date_depart,
     heure_depart: ligne.heure_depart,
     destination: ligne.destination,
+    lieu_depart: ligne.lieu_depart || null,
     numero_wave_responsable: ligne.numero_wave_responsable,
     montant_fcfa: ligne.montant_fcfa == null ? null : Number(ligne.montant_fcfa),
     exemple: !!ligne.exemple,
@@ -32,7 +44,7 @@ export async function handler(event) {
 
   if (event.httpMethod === 'GET') {
     const details = event.queryStringParameters?.details === '1'
-    if (details && !jetonValide(event)) return nonAutorise()
+    if (details && !jetonCaravanesValide(event)) return nonAutoriseCaravanes()
     try {
       if (details) {
         const res = await pool.query(
@@ -90,11 +102,12 @@ export async function handler(event) {
   }
 
   if (event.httpMethod === 'POST') {
-    if (!jetonValide(event)) return nonAutorise()
+    if (!jetonCaravanesValide(event)) return nonAutoriseCaravanes()
     const corps = lireCorps(event)
     const date_depart = nettoyerTexte(corps.date_depart)
     const heure_depart = /^\d{2}:\d{2}$/.test(String(corps.heure_depart || '')) ? corps.heure_depart : '08:00'
     const destination = nettoyerTexte(corps.destination)
+    const lieu_depart = nettoyerTexte(corps.lieu_depart) || lieuDepartParDefaut(destination)
     const numero_wave = nettoyerTexte(corps.numero_wave_responsable)
     const montant_fcfa =
       corps.montant_fcfa === '' || corps.montant_fcfa == null
@@ -120,9 +133,9 @@ export async function handler(event) {
         chauffeur_id = ins.rows[0].id
       }
       const res = await pool.query(
-        `INSERT INTO caravanes (date_depart, heure_depart, destination, chauffeur_id, numero_wave_responsable, montant_fcfa)
-         VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-        [date_depart, heure_depart, destination, chauffeur_id, numero_wave, montant_fcfa]
+        `INSERT INTO caravanes (date_depart, heure_depart, destination, lieu_depart, chauffeur_id, numero_wave_responsable, montant_fcfa)
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+        [date_depart, heure_depart, destination, lieu_depart || null, chauffeur_id, numero_wave, montant_fcfa]
       )
       return reponse(201, { caravane_id: res.rows[0].id })
     } catch (e) {

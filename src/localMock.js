@@ -7,10 +7,11 @@
 // ("change-moi"). Sur le vrai site, le mot de passe vient de la variable
 // d'environnement BUREAU_PASSWORD (voir README).
 
-import { desistementOuvert } from './data.js'
+import { desistementOuvert, lieuDepartParDefaut } from './data.js'
 
 const CLE = 'aerd-local-v1'
 const MOT_DE_PASSE_DEV = 'change-moi'
+const MOT_DE_PASSE_DEV_CARAVANES = 'change-moi-caravanes'
 
 function etatVide() {
   return {
@@ -72,6 +73,18 @@ function jetonLocal() {
   return hachageSimple(MOT_DE_PASSE_DEV + ':bureau')
 }
 
+function jetonLocalCaravanes() {
+  return hachageSimple(MOT_DE_PASSE_DEV_CARAVANES + ':caravanes')
+}
+
+function exigerAuthCaravanes(opts) {
+  if (!opts.jetonCaravanes || opts.jetonCaravanes !== jetonLocalCaravanes()) {
+    const e = new Error('Accès refusé. Entre le mot de passe des caravanes.')
+    e.status = 401
+    throw e
+  }
+}
+
 function avecChauffeur(etat, c) {
   const ch = c.chauffeur_id ? etat.chauffeurs.find((x) => x.id === c.chauffeur_id) : null
   return {
@@ -79,6 +92,7 @@ function avecChauffeur(etat, c) {
     date_depart: c.date_depart,
     heure_depart: c.heure_depart || '08:00',
     destination: c.destination,
+    lieu_depart: c.lieu_depart || null,
     numero_wave_responsable: c.numero_wave_responsable,
     montant_fcfa: c.montant_fcfa == null ? null : Number(c.montant_fcfa),
     exemple: !!c.exemple,
@@ -105,11 +119,16 @@ export const local = {
       return { token: jetonLocal() }
     }
 
+    if (nom === 'caravanes-login') {
+      if (corps.password !== MOT_DE_PASSE_DEV_CARAVANES) erreur('Mot de passe incorrect.')
+      return { token: jetonLocalCaravanes() }
+    }
+
     if (nom === 'caravanes') {
       if ((opts.methode || 'GET') === 'GET') {
         const liste = [...etat.caravanes].sort((a, b) => (a.date_depart < b.date_depart ? -1 : 1))
         if (params.details === '1') {
-          exigerAuth(opts)
+          exigerAuthCaravanes(opts)
           return {
             caravanes: liste.map((c) => ({
               ...avecChauffeur(etat, c),
@@ -134,11 +153,12 @@ export const local = {
             }))
         }
       }
-      // POST : créer une caravane (bureau)
-      exigerAuth(opts)
+      // POST : créer une caravane (mot de passe caravanes)
+      exigerAuthCaravanes(opts)
       const date_depart = nettoyerTexte(corps.date_depart)
       const heure_depart = /^\d{2}:\d{2}$/.test(String(corps.heure_depart || '')) ? corps.heure_depart : '08:00'
       const destination = nettoyerTexte(corps.destination)
+      const lieu_depart = nettoyerTexte(corps.lieu_depart) || lieuDepartParDefaut(destination)
       const numero_wave = nettoyerTexte(corps.numero_wave_responsable)
       const montant_fcfa =
         corps.montant_fcfa === '' || corps.montant_fcfa == null ? null : Math.trunc(Number(corps.montant_fcfa))
@@ -160,7 +180,7 @@ export const local = {
         })
       }
       const id = etat.seq.caravane++
-      etat.caravanes.push({ id, date_depart, heure_depart, destination, chauffeur_id, numero_wave_responsable: numero_wave, montant_fcfa, exemple: false })
+      etat.caravanes.push({ id, date_depart, heure_depart, destination, lieu_depart: lieu_depart || null, chauffeur_id, numero_wave_responsable: numero_wave, montant_fcfa, exemple: false })
       sauver(etat)
       return { caravane: avecChauffeur(etat, etat.caravanes.find((c) => c.id === id)) }
     }
@@ -216,7 +236,7 @@ export const local = {
         return { ok: true }
       }
       if (corps.action === 'marquer-paye' || corps.action === 'retirer') {
-        exigerAuth(opts)
+        exigerAuthCaravanes(opts)
         const inscription = etat.inscriptions.find((i) => i.id === Number(corps.inscription_id))
         if (!inscription) erreur('Inscription introuvable.')
         inscription.statut = corps.action === 'marquer-paye' ? 'payé' : 'désisté'

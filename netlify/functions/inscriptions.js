@@ -4,11 +4,11 @@
 //   Public, sans jeton :
 //     { action: 'inscrire', caravane_id, prenom, nom, telephone }
 //     { action: 'desister', caravane_id, telephone }
-//   Bureau, avec jeton :
+//   Bureau, avec jeton caravanes :
 //     { action: 'marquer-paye', inscription_id }
 //     { action: 'retirer', inscription_id }
 import { getPool, reponse, erreur, pasDeBase, lireCorps, nettoyerTexte } from './db.js'
-import { jetonValide, nonAutorise } from './auth.js'
+import { jetonCaravanesValide, nonAutoriseCaravanes } from './auth.js'
 
 // Anti-spam simple (en mémoire de la fonction, première ligne de
 // défense) : une même personne ne peut pas s'inscrire deux fois
@@ -119,7 +119,7 @@ export async function handler(event) {
     }
 
     if (corps.action === 'marquer-paye' || corps.action === 'retirer') {
-      if (!jetonValide(event)) return nonAutorise()
+      if (!jetonCaravanesValide(event)) return nonAutoriseCaravanes()
       const inscription_id = Number(corps.inscription_id)
       if (!inscription_id) return erreur('Inscription introuvable.', 400)
       const statut = corps.action === 'marquer-paye' ? 'payé' : 'désisté'

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { formatDate, formatHeure, formatMontant, normaliserTelephone } from '../data.js'
+import { formatDate, formatHeure, formatMontant, lieuDepartParDefaut, normaliserTelephone } from '../data.js'
 import { api } from '../api.js'
 import Modale from '../components/Modale.jsx'
 
@@ -16,6 +16,7 @@ function FormulaireCaravane({ chauffeurs, onCree, onAnnuler }) {
     date_depart: '',
     heure_depart: '08:00',
     destination: '',
+    lieu_depart: '',
     numero_wave_responsable: '',
     montant_fcfa: '',
     chauffeur_id: '',
@@ -27,6 +28,18 @@ function FormulaireCaravane({ chauffeurs, onCree, onAnnuler }) {
 
   const changer = (cle) => (e) => setForm({ ...form, [cle]: e.target.value })
 
+  // Quand la destination change, le lieu de départ se remplit tout seul
+  // s'il est encore vide (UAM pour Diourbel/Bambey, Gouvernance de Diourbel
+  // pour Dakar). Le bureau peut toujours le modifier ensuite.
+  const changerDestination = (e) => {
+    const destination = e.target.value
+    setForm((ancien) => ({
+      ...ancien,
+      destination,
+      lieu_depart: ancien.lieu_depart === '' ? lieuDepartParDefaut(destination) : ancien.lieu_depart
+    }))
+  }
+
   const creer = async (e) => {
     e.preventDefault()
     setErreur('')
@@ -36,6 +49,7 @@ function FormulaireCaravane({ chauffeurs, onCree, onAnnuler }) {
         date_depart: form.date_depart,
         heure_depart: form.heure_depart || '08:00',
         destination: form.destination,
+        lieu_depart: form.lieu_depart,
         numero_wave_responsable: normaliserTelephone(form.numero_wave_responsable),
         montant_fcfa: form.montant_fcfa === '' ? null : Number(form.montant_fcfa)
       }
@@ -75,10 +89,23 @@ function FormulaireCaravane({ chauffeurs, onCree, onAnnuler }) {
           <input
             id="car-destination"
             value={form.destination}
-            onChange={changer('destination')}
+            onChange={changerDestination}
             placeholder="Ex : Diourbel"
             required
           />
+        </div>
+        <div className="champ">
+          <label htmlFor="car-lieu">Lieu de départ</label>
+          <input
+            id="car-lieu"
+            value={form.lieu_depart}
+            onChange={changer('lieu_depart')}
+            placeholder="Ex : UAM, Diamniadio"
+          />
+          <p className="aide">
+            Se remplit tout seul selon la destination : UAM pour Diourbel ou Bambey, Gouvernance de
+            Diourbel pour Dakar. Tu peux le modifier.
+          </p>
         </div>
         <div className="champ">
           <label htmlFor="car-wave">Numéro Wave du responsable (pour recevoir les paiements)</label>
@@ -301,9 +328,19 @@ export default function BureauCaravanes() {
                 <h3>
                   {c.destination} {c.exemple && <span className="badge badge-exemple">Exemple</span>}
                 </h3>
-                <p className="date">
-                  {formatDate(c.date_depart)} à {formatHeure(c.heure_depart)}
-                </p>
+                <div className="bloc-depart">
+                  {c.lieu_depart && (
+                    <p className="ligne">
+                      <span className="etiquette">Lieu de départ :</span> <strong>{c.lieu_depart}</strong>
+                    </p>
+                  )}
+                  <p className="ligne">
+                    <span className="etiquette">Date de départ :</span> <strong>{formatDate(c.date_depart)}</strong>
+                  </p>
+                  <p className="ligne">
+                    <span className="etiquette">Heure de départ :</span> <strong>{formatHeure(c.heure_depart)}</strong>
+                  </p>
+                </div>
                 {c.chauffeur ? (
                   <p className="ligne">
                     <span className="etiquette">Chauffeur :</span> {c.chauffeur.prenom} {c.chauffeur.nom} —{' '}

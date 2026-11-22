@@ -56,6 +56,17 @@ export function formatDate(dateStr) {
   })
 }
 
+// Lieu de départ d'une caravane, selon sa destination.
+// La caravane part toujours de l'autre ville : vers Diourbel ou Bambey,
+// on part de Dakar (UAM, Diamniadio) ; vers Dakar, on part de Diourbel
+// (Gouvernance de Diourbel). Le bureau peut toujours modifier le lieu.
+export function lieuDepartParDefaut(destination) {
+  const d = String(destination || '').toLowerCase()
+  if (d.includes('dakar') || d.includes('diamniadio')) return 'Gouvernance de Diourbel'
+  if (d.includes('diourbel') || d.includes('bambey')) return 'UAM, Diamniadio'
+  return ''
+}
+
 // Petit nettoyage d'un numéro de téléphone (espaces en trop retirés)
 export function normaliserTelephone(valeur) {
   return String(valeur || '').replace(/\s+/g, ' ').trim()

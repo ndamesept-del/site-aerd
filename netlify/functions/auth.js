@@ -37,3 +37,38 @@ export function nonAutorise() {
     body: JSON.stringify({ error: 'Accès refusé. Connecte-toi à l’espace bureau.' })
   }
 }
+
+// Mot de passe des caravanes, séparé du mot de passe du bureau.
+// Seul l'administrateur le connaît. Il vient UNIQUEMENT de la variable
+// d'environnement CARAVANES_PASSWORD (définie dans Netlify).
+// Valeur par défaut : développement local seulement. À CHANGER.
+export const MOT_DE_PASSE_CARAVANES_DEFAUT = 'change-moi-caravanes'
+
+export function motDePasseCaravanes() {
+  return process.env.CARAVANES_PASSWORD || MOT_DE_PASSE_CARAVANES_DEFAUT
+}
+
+// Jeton caravanes : signature du mot de passe des caravanes.
+// Il voyage dans l'en-tête X-Jeton-Caravanes (l'en-tête Authorization
+// est déjà prise par le jeton du bureau).
+export function creerJetonCaravanes() {
+  return crypto.createHmac('sha256', motDePasseCaravanes()).update('caravanes-aerd').digest('hex')
+}
+
+export function jetonCaravanesValide(event) {
+  const jeton = (event.headers?.['x-jeton-caravanes'] || event.headers?.['X-Jeton-Caravanes'] || '').trim()
+  if (!jeton) return false
+  const attendu = creerJetonCaravanes()
+  const a = Buffer.from(jeton)
+  const b = Buffer.from(attendu)
+  if (a.length !== b.length) return false
+  return crypto.timingSafeEqual(a, b)
+}
+
+export function nonAutoriseCaravanes() {
+  return {
+    statusCode: 401,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ error: 'Accès refusé. Entre le mot de passe des caravanes.' })
+  }
+}

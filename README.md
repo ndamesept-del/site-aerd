@@ -76,6 +76,7 @@ dans l'éditeur SQL de Neon, pour ajouter ce qui manque :
 
 ```sql
 ALTER TABLE caravanes ADD COLUMN IF NOT EXISTS montant_fcfa INTEGER;
+ALTER TABLE caravanes ADD COLUMN IF NOT EXISTS lieu_depart TEXT;
 
 CREATE TABLE IF NOT EXISTS bureau (
   id SERIAL PRIMARY KEY,
@@ -180,10 +181,16 @@ Il vient de la variable d’environnement `BUREAU_PASSWORD`.
 - En local : mets-le dans le fichier `.env` (copié depuis `.env.example`).
 - Sur Netlify : va dans Site settings → Environment variables, et ajoute :
   - `BUREAU_PASSWORD` : ton mot de passe (fort, connu du bureau seulement)
+  - `CARAVANES_PASSWORD` : mot de passe de l’onglet Caravanes, connu de l’administrateur seulement
   - `DATABASE_URL` : l’adresse de ta base PostgreSQL (donnée par Neon)
 
 Pour changer le mot de passe plus tard : change la variable dans Netlify,
 puis redéploie le site. L’ancien mot de passe ne marche plus.
+
+**Mot de passe des caravanes :** l’onglet Caravanes a son propre mot de passe
+(`CARAVANES_PASSWORD`), séparé de celui du bureau. Seul l’administrateur le
+connaît : sans lui, personne ne peut ouvrir l’onglet, ni créer une caravane,
+ni valider un paiement (« Marquer Payé »).
 
 ## 5. Déployer le site sur Netlify
 
@@ -196,7 +203,7 @@ puis redéploie le site. L’ancien mot de passe ne marche plus.
    - Functions directory : `netlify/functions`
    (Ces réglages sont déjà dans le fichier `netlify.toml`, Netlify les reprend tout seul.)
 4. Avant de déployer, ajoute les variables d’environnement (étape 4) :
-   `DATABASE_URL` et `BUREAU_PASSWORD`.
+   `DATABASE_URL`, `BUREAU_PASSWORD` et `CARAVANES_PASSWORD`.
 5. Clique sur « Deploy ». Netlify te donne une adresse, par exemple
    `https://aerd-uam.netlify.com`.
 6. Dans la console SQL de ta base, vérifie que les tables existent
@@ -331,5 +338,5 @@ site-aerd/
   au maximum). Pas de captcha, pas de service externe.
 - **Images :** le logo est compressé (512 px, environ 42 Ko). Les photos du bureau sont redimensionnées
   dans le navigateur (400 px maximum, JPEG) avant d’être enregistrées.
-- **Clés secrètes :** `DATABASE_URL` et `BUREAU_PASSWORD` sont des variables d’environnement Netlify
+- **Clés secrètes :** `DATABASE_URL`, `BUREAU_PASSWORD` et `CARAVANES_PASSWORD` sont des variables d’environnement Netlify
   seulement, jamais dans le code. Le HTTPS est forcé par Netlify par défaut.

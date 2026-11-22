@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS caravanes (
   date_depart DATE NOT NULL,
   heure_depart TIME NOT NULL DEFAULT '08:00',
   destination TEXT NOT NULL,
+  lieu_depart TEXT,
   chauffeur_id INTEGER REFERENCES chauffeurs(id) ON DELETE SET NULL,
   numero_wave_responsable TEXT NOT NULL,
   montant_fcfa INTEGER,
@@ -71,6 +72,12 @@ CREATE TABLE IF NOT EXISTS caravanes (
 -- Montant de la place (en FCFA) : ce que chaque membre paie pour la caravane.
 -- Si la table existe déjà sans cette colonne, ajoute-la avec :
 --   ALTER TABLE caravanes ADD COLUMN IF NOT EXISTS montant_fcfa INTEGER;
+
+-- Lieu de départ (point de rendez-vous) : « UAM, Diamniadio » quand la
+-- caravane va à Diourbel ou Bambey, « Gouvernance de Diourbel » quand elle
+-- va à Dakar. Le bureau peut le modifier à la création. Si la table existe
+-- déjà sans cette colonne, ajoute-la avec :
+--   ALTER TABLE caravanes ADD COLUMN IF NOT EXISTS lieu_depart TEXT;
 
 CREATE INDEX IF NOT EXISTS caravanes_date_idx ON caravanes (date_depart);
 

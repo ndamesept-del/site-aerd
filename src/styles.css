@@ -781,6 +781,24 @@ p {
   font-weight: 600;
 }
 
+.bloc-depart {
+  background: var(--bleu-tres-clair);
+  border: 1px solid var(--bleu-clair);
+  border-left: 6px solid var(--bleu);
+  border-radius: 16px;
+  padding: 14px 18px;
+  margin: 12px 0;
+}
+
+.bloc-depart .ligne {
+  margin: 5px 0;
+  font-size: 17px;
+}
+
+.bloc-depart .ligne strong {
+  color: var(--bleu-fonce);
+}
+
 .montant {
   font-size: 24px;
   font-weight: 800;
