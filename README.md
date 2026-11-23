@@ -124,7 +124,9 @@ d'attendre encore.
 **Numéro du trésorier :** c'est à ce numéro (Wave / Orange Money) que les membres envoient les
 1 000 FCFA de leur carte. Le trésorier le met lui-même dans l'onglet « Cartes de membres » (section
 « Numéro du trésorier », en haut de l'onglet), et il s'affiche sur la page publique « Ma carte de
-membre ». Si la trésorerie change, le trésorier retire ce numéro (bouton « Retirer le numéro ») et met
+membre » : dans l'étape 1, dès l'ouverture de la page (« Paie 1 000 FCFA par Wave ou Orange Money au
+trésorier au … »), et dans l'encadré de paiement après avoir tapé son nom. Si la trésorerie change,
+le trésorier retire ce numéro (bouton « Retirer le numéro ») et met
 celui du nouveau trésorier. Le même numéro sert aussi pour les cotisations (onglet « Cotisations »,
 même champ et même bouton « Retirer le numéro ») et s'affiche sur la page publique des cotisations
 et des dons. Ceux qui n'ont pas

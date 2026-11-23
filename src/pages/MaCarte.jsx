@@ -140,7 +140,15 @@ export default function MaCarte() {
         <h2>Ma carte de membre</h2>
         <ol className="etapes-carte">
           <li>
-            <strong>1. Paie {formatMontant(PRIX_CARTE_FCFA)}</strong> par Wave ou Orange Money au trésorier.
+            <strong>1. Paie {formatMontant(PRIX_CARTE_FCFA)}</strong> par Wave ou Orange Money au trésorier
+            {numeroTresorier ? (
+              <>
+                {' '}
+                au <a href={'tel:' + numeroTresorier.replace(/\s/g, '')}>{numeroTresorier}</a>.
+              </>
+            ) : (
+              '.'
+            )}
           </li>
           <li>
             <strong>2. Déclare ton paiement ici</strong> : le trésorier le valide au bureau.
