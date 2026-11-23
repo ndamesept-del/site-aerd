@@ -1,14 +1,69 @@
 import { useEffect, useRef, useState } from 'react'
 import { Html5QrcodeScanner } from 'html5-qrcode'
-import { api } from '../api.js'
+import { api, setToken, estConnecte } from '../api.js'
 
 // Vérifier une carte de membre : on scanne son QR code (ou on tape son
 // numéro) et le site contrôle le numéro dans la base de l'amicale.
+// La vérification est réservée au bureau : sans le mot de passe du
+// bureau, on ne voit que le formulaire de connexion. La fonction elle-même
+// n'a pas changé.
 // Une carte inventée (par exemple fabriquée par une IA) porte un numéro
 // qui n'existe pas dans la base : la page dit « Carte non reconnue ».
 // Une photocopie d'une vraie carte reste authentique : celui qui vérifie
 // compare le nom affiché avec le nom écrit sur la carte.
+
+// Connexion au bureau (même modèle que l'espace bureau) : la page de
+// vérification ne s'ouvre qu'après ce mot de passe.
+function PageConnexionBureau({ onConnecte }) {
+  const [password, setPassword] = useState('')
+  const [envoi, setEnvoi] = useState(false)
+  const [erreur, setErreur] = useState('')
+
+  const envoyer = async (e) => {
+    e.preventDefault()
+    setErreur('')
+    setEnvoi(true)
+    try {
+      const data = await api.login(password)
+      setToken(data.token)
+      onConnecte()
+    } catch {
+      setErreur('Mot de passe incorrect. Réessaie.')
+    } finally {
+      setEnvoi(false)
+    }
+  }
+
+  return (
+    <div className="conteneur">
+      <div className="carte carte-connexion">
+        <h2>Vérifier une carte de membre</h2>
+        <p>Cette vérification est réservée au bureau de l’AERD/UAM. Entre le mot de passe du bureau pour continuer.</p>
+        <form onSubmit={envoyer}>
+          {erreur && <p className="message-erreur">{erreur}</p>}
+          <div className="champ">
+            <label htmlFor="mot-de-passe">Mot de passe du bureau</label>
+            <input
+              id="mot-de-passe"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              required
+            />
+          </div>
+          <button type="submit" className="bouton bouton-bleu bouton-plein" disabled={envoi}>
+            {envoi ? 'Vérification…' : 'Entrer dans l’espace bureau'}
+          </button>
+        </form>
+        <p className="message-info">Le mot de passe est partagé par le bureau.</p>
+      </div>
+    </div>
+  )
+}
+
 export default function VerifierCarte() {
+  const [connecte, setConnecte] = useState(estConnecte())
   const [numero, setNumero] = useState('')
   const [verification, setVerification] = useState(null)
   const [erreur, setErreur] = useState('')
@@ -29,15 +84,26 @@ export default function VerifierCarte() {
       const data = await api.verifierCarte(propre)
       setVerification(data)
     } catch (err) {
-      setErreur(err.message || 'Une erreur est survenue.')
+      // Jeton du bureau périmé (mot de passe changé) : on efface le
+      // jeton et on revient au formulaire du mot de passe, au lieu de
+      // rester bloqué sur une erreur.
+      if (err.status === 401) {
+        setToken('')
+        setConnecte(false)
+        setErreur('Ta session a expiré. Reconnecte-toi à l’espace bureau.')
+      } else {
+        setErreur(err.message || 'Une erreur est survenue.')
+      }
     } finally {
       setRecherche(false)
     }
   }
 
   // Arrivée par le QR de la carte : /verifier-carte?numero=AERD-2026-001
-  // La vérification se lance toute seule, sans rien taper.
+  // La vérification se lance toute seule, sans rien taper, une fois
+  // connecté au bureau.
   useEffect(() => {
+    if (!connecte) return
     const params = new URLSearchParams(window.location.search)
     const n = (params.get('numero') || '').trim()
     if (n) {
@@ -45,7 +111,7 @@ export default function VerifierCarte() {
       verifier(n)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [connecte])
 
   // Numéro tiré d'un QR scanné : lien de vérification, numéro seul, ou
   // autre texte (qui ne correspond à aucune carte de l'amicale).
@@ -90,6 +156,10 @@ export default function VerifierCarte() {
   const chercher = (e) => {
     e.preventDefault()
     verifier(numero)
+  }
+
+  if (!connecte) {
+    return <PageConnexionBureau onConnecte={() => setConnecte(true)} />
   }
 
   return (

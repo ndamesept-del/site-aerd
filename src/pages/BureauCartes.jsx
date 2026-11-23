@@ -227,6 +227,10 @@ export default function BureauCartes({ onAccesRefuse }) {
         carte payée, tu peux aussi copier le lien de sa carte et le lui envoyer par WhatsApp : il n’aura qu’à cliquer
         dessus pour la télécharger, sans rien taper.
       </p>
+      <p>
+        <a href="/verifier-carte">Vérifier une carte de membre</a> : scanne le QR d’une carte avec la caméra du
+        téléphone, ou tape son numéro, pour vérifier qu’elle est authentique.
+      </p>
 
       {message && <p className="message-ok">{message}</p>}
       {erreur && <p className="message-erreur">{erreur}</p>}

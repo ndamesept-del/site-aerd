@@ -89,10 +89,6 @@ export default function App() {
               <span className="etiquette-longue">Ma carte de membre</span>
               <span className="etiquette-courte">Ma carte</span>
             </button>
-            <button type="button" className={page === 'verifier' ? 'actif' : ''} onClick={() => aller('verifier')}>
-              <span className="etiquette-longue">Vérifier une carte</span>
-              <span className="etiquette-courte">Vérifier</span>
-            </button>
             <button type="button" className={page === 'caravanes' ? 'actif' : ''} onClick={() => aller('caravanes')}>
               Caravanes
             </button>

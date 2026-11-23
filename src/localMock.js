@@ -790,8 +790,10 @@ export const local = {
     }
 
     if (nom === 'verifier-carte') {
-      // Vérifier une carte : on contrôle son numéro dans la base. On ne
+      // Vérifier une carte : réservé au bureau (jeton du bureau
+      // obligatoire). On contrôle son numéro dans la base. On ne
       // renvoie que le prénom, le nom, le numéro et si elle est payée.
+      exigerAuth(opts)
       const numero = nettoyerTexte(params.numero).toUpperCase().replace(/\s+/g, '')
       if (!numero) erreur('Numéro de carte manquant.')
       const trouve = etat.membres.find((m) => (m.numero_carte || '').toUpperCase() === numero)

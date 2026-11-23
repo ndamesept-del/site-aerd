@@ -120,12 +120,14 @@ export const api = {
   // Public
   caravanesPubliques: () => appel('caravanes'),
   maCarte: (donnees) => appel('ma-carte', { methode: 'POST', corps: donnees }),
-  verifierCarte: (numero) => appel('verifier-carte', { params: { numero } }),
   inscrire: (donnees) => appel('inscriptions', { methode: 'POST', corps: { action: 'inscrire', ...donnees } }),
   desister: (donnees) => appel('inscriptions', { methode: 'POST', corps: { action: 'desister', ...donnees } }),
 
   // Bureau (connexion)
   login: (password) => appel('login', { methode: 'POST', corps: { password } }),
+
+  // Vérifier une carte (bureau seulement, pas le public)
+  verifierCarte: (numero) => appel('verifier-carte', { auth: true, params: { numero } }),
 
   // Caravanes (connexion séparée, administrateur seulement)
   caravanesLogin: (password) => appel('caravanes-login', { methode: 'POST', corps: { password } }),

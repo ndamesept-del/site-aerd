@@ -1,8 +1,12 @@
-// Vérifier une carte de membre (public, sans jeton).
+// Vérifier une carte de membre (privé : jeton du bureau obligatoire).
 //
-// Le QR code de la carte est un lien vers cette vérification, avec le
-// numéro de la carte :
+// La vérification est réservée au bureau : le public ne voit plus cette
+// page. Le QR code de la carte reste un lien vers cette vérification,
+// avec le numéro de la carte :
 //   GET /.netlify/functions/verifier-carte?numero=AERD-2026-001
+//
+// Quand on scanne le QR sans être connecté au bureau, la page demande
+// d'abord le mot de passe du bureau, puis elle vérifie.
 //
 // On ne renvoie que le prénom, le nom, le numéro de carte et si elle est
 // payée : jamais le numéro de téléphone, ni le numéro du parent, ni le
@@ -17,11 +21,13 @@
 // d'une vraie carte reste authentique : celui qui vérifie doit comparer
 // le nom affiché avec le nom écrit sur la carte.
 import { getPool, reponse, erreur, pasDeBase, nettoyerTexte } from './db.js'
+import { jetonValide, nonAutorise } from './auth.js'
 
 export async function handler(event) {
   const pool = getPool()
   if (!pool) return pasDeBase()
   if (event.httpMethod !== 'GET') return erreur('Méthode non autorisée.', 405)
+  if (!jetonValide(event)) return nonAutorise()
 
   const numero = nettoyerTexte(event.queryStringParameters?.numero)
     .toUpperCase()
