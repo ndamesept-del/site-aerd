@@ -127,7 +127,17 @@ filtre « Sans carte »).
 bouton « Copier le lien de la carte ». Le trésorier le copie et l'envoie au membre par WhatsApp. Le lien
 contient déjà le nom du membre (ex : `/ma-carte?prenom=Awa&nom=Diallo`) : en cliquant dessus, le membre
 voit sa carte tout de suite et peut la télécharger, sans rien taper. Sans le lien, il peut aussi venir
-sur la page « Ma carte de membre » et taper son prénom et son nom. Pas de photo sur la carte (décision du bureau, novembre 2026). Le
+sur la page « Ma carte de membre » et taper son prénom et son nom.
+
+**Vérifier une carte (anti-fausse carte) :** le QR code de la carte est un lien de vérification
+(`/verifier-carte?numero=AERD-2026-001`). En scannant la carte avec l'appareil photo du téléphone, on
+arrive sur la page « Vérifier une carte », qui contrôle le numéro dans la base de l'amicale : carte
+authentique (numéro trouvé, carte payée, avec le nom du membre), carte non validée (numéro trouvé, carte
+pas encore payée) ou carte non reconnue (numéro inexistant, par exemple une carte inventée par une IA).
+La page permet aussi de scanner avec la caméra du téléphone ou de taper le numéro à la main. La
+vérification ne montre que le prénom, le nom et le numéro : jamais le téléphone ni le statut boursier.
+Limite : une photocopie d'une vraie carte reste authentique, celui qui vérifie compare le nom affiché
+avec le nom écrit sur la carte. L'endpoint public est `/.netlify/functions/verifier-carte?numero=...`. Pas de photo sur la carte (décision du bureau, novembre 2026). Le
 numéro du président s'affiche sur la page d'accueil, sous sa carte (contact du président). Dans l'onglet
 « Membres », celui qui a une carte payée porte une étoile dorée ★ à côté de son nom, et on peut filtrer
 la liste : « Tous les membres », « ★ Avec carte » ou « Sans carte ». L'étoile sert à retrouver d'un coup

@@ -91,9 +91,16 @@ export function formaterNumeroCarte(annee, numero) {
   return 'AERD-' + annee + '-' + String(numero).padStart(3, '0')
 }
 
-// Texte du QR code de la carte : le nom et le numéro du membre.
+// Contenu du QR code de la carte : le lien de vérification de la carte.
+// En scannant le QR avec l'appareil photo du téléphone, on arrive sur la
+// page « Vérifier une carte », qui contrôle le numéro dans la base de
+// l'amicale. Une carte inventée (par exemple fabriquée par une IA) porte
+// un numéro qui n'existe pas dans la base : la page dit alors
+// « Carte non reconnue ». Une photocopie d'une vraie carte reste
+// authentique : celui qui vérifie compare le nom affiché avec le nom
+// écrit sur la carte.
 export function texteQRCarte(membre) {
-  return 'AERD/UAM - ' + membre.prenom + ' ' + membre.nom + ' - ' + membre.numero_carte
+  return window.location.origin + '/verifier-carte?numero=' + encodeURIComponent(membre.numero_carte)
 }
 
 // Cotisation mensuelle du volet social : chaque membre paye ce montant

@@ -716,6 +716,27 @@ export const local = {
       return { membres: trouves }
     }
 
+    if (nom === 'verifier-carte') {
+      // Vérifier une carte : on contrôle son numéro dans la base. On ne
+      // renvoie que le prénom, le nom, le numéro et si elle est payée.
+      const numero = nettoyerTexte(params.numero).toUpperCase().replace(/\s+/g, '')
+      if (!numero) erreur('Numéro de carte manquant.')
+      const trouve = etat.membres.find((m) => (m.numero_carte || '').toUpperCase() === numero)
+      if (!trouve) return { authentique: false, raison: 'inconnu', numero }
+      return {
+        authentique: !!trouve.carte_payee,
+        raison: trouve.carte_payee ? null : 'non-validee',
+        numero: trouve.numero_carte,
+        membre: {
+          id: trouve.id,
+          prenom: trouve.prenom,
+          nom: trouve.nom,
+          numero_carte: trouve.numero_carte,
+          carte_payee: !!trouve.carte_payee
+        }
+      }
+    }
+
     if (nom === 'stats') {
       exigerAuth(opts)
       return {

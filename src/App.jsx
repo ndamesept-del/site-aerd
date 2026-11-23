@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Accueil from './pages/Accueil.jsx'
 import MaCarte from './pages/MaCarte.jsx'
+import VerifierCarte from './pages/VerifierCarte.jsx'
 import CaravanesPubliques from './pages/CaravanesPubliques.jsx'
 import CotisationsDons from './pages/CotisationsDons.jsx'
 import Bureau from './pages/Bureau.jsx'
@@ -15,6 +16,7 @@ const CHEMINS = {
   '/': 'accueil',
   '/index.html': 'accueil',
   '/ma-carte': 'carte',
+  '/verifier-carte': 'verifier',
   '/caravanes': 'caravanes',
   '/cotisations-dons': 'cotisations',
   '/bureau': 'bureau',
@@ -25,6 +27,7 @@ const CHEMINS = {
 const ADRESSES = {
   accueil: '/',
   carte: '/ma-carte',
+  verifier: '/verifier-carte',
   caravanes: '/caravanes',
   cotisations: '/cotisations-dons',
   bureau: '/bureau',
@@ -86,6 +89,10 @@ export default function App() {
               <span className="etiquette-longue">Ma carte de membre</span>
               <span className="etiquette-courte">Ma carte</span>
             </button>
+            <button type="button" className={page === 'verifier' ? 'actif' : ''} onClick={() => aller('verifier')}>
+              <span className="etiquette-longue">Vérifier une carte</span>
+              <span className="etiquette-courte">Vérifier</span>
+            </button>
             <button type="button" className={page === 'caravanes' ? 'actif' : ''} onClick={() => aller('caravanes')}>
               Caravanes
             </button>
@@ -115,6 +122,7 @@ export default function App() {
       <main>
         {page === 'accueil' && <Accueil aller={aller} />}
         {page === 'carte' && <MaCarte />}
+        {page === 'verifier' && <VerifierCarte />}
         {page === 'caravanes' && <CaravanesPubliques />}
         {page === 'cotisations' && <CotisationsDons />}
         {page === 'bureau' && <Bureau aller={aller} />}

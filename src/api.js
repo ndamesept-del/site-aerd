@@ -106,6 +106,7 @@ export const api = {
   // Public
   caravanesPubliques: () => appel('caravanes'),
   maCarte: (donnees) => appel('ma-carte', { methode: 'POST', corps: donnees }),
+  verifierCarte: (numero) => appel('verifier-carte', { params: { numero } }),
   inscrire: (donnees) => appel('inscriptions', { methode: 'POST', corps: { action: 'inscrire', ...donnees } }),
   desister: (donnees) => appel('inscriptions', { methode: 'POST', corps: { action: 'desister', ...donnees } }),
 

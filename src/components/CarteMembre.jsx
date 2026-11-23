@@ -5,7 +5,9 @@ import { texteQRCarte, PRIX_CARTE_FCFA, formatMontant } from '../data.js'
 // Carte de membre numérique : ce que le membre voit sur le site, et ce
 // qu'il télécharge en image PNG (même contenu). Pas de photo sur la carte
 // (décision du bureau, novembre 2026) : nom, numéro de carte et QR code.
-// Le QR code regroupe le nom et le numéro du membre.
+// Le QR code est le lien de vérification de la carte : en le scannant, on
+// arrive sur la page « Vérifier une carte », qui contrôle le numéro dans
+// la base de l'amicale.
 const LARGEUR = 1000
 const HAUTEUR = 630
 const BLEU_FONCE = '#0a2347'
