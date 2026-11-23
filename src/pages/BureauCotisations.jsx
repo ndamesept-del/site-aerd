@@ -72,6 +72,19 @@ export default function BureauCotisations() {
     }
   }
 
+  const retirerNumero = async () => {
+    setErreur('')
+    setMessage('')
+    try {
+      await api.definirNumeroTresorier('')
+      setNumeroTresorier('')
+      setNouveauNumero('')
+      setMessage('Numéro du trésorier retiré. Il ne s’affiche plus sur les pages publiques.')
+    } catch (err) {
+      setErreur(err.message || 'Une erreur est survenue.')
+    }
+  }
+
   const enregistrerNumero = async (e) => {
     e.preventDefault()
     setErreur('')
@@ -131,7 +144,8 @@ export default function BureauCotisations() {
       <h3 style={{ marginTop: 20 }}>Numéro du trésorier</h3>
       <p className="aide">
         C’est à ce numéro que les membres envoient leurs cotisations par Wave ou Orange Money.
-        Il s’affiche sur la page publique des cotisations et des dons.
+        Il s’affiche sur la page publique des cotisations et des dons. Si la trésorerie change,
+        retire ce numéro et mets celui du nouveau trésorier.
       </p>
       <form className="formulaire" onSubmit={enregistrerNumero}>
         <div className="champ">
@@ -149,6 +163,11 @@ export default function BureauCotisations() {
           <button type="submit" className="bouton bouton-bleu">
             Enregistrer le numéro
           </button>
+          {numeroTresorier && (
+            <button type="button" className="bouton-discret bouton-danger" onClick={retirerNumero}>
+              Retirer le numéro
+            </button>
+          )}
         </div>
       </form>
 

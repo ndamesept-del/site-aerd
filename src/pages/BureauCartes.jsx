@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { formatMontant, PRIX_CARTE_FCFA } from '../data.js'
+import { formatMontant, PRIX_CARTE_FCFA, normaliserTelephone } from '../data.js'
 import { api } from '../api.js'
 
 // Cartes de membres (bureau) : c'est ici que le trésorier valide les
@@ -24,6 +24,9 @@ export default function BureauCartes({ onAccesRefuse }) {
   const [message, setMessage] = useState('')
   const [recherche, setRecherche] = useState('')
   const [validationEnCours, setValidationEnCours] = useState(null)
+  const [numeroTresorier, setNumeroTresorier] = useState('')
+  const [nouveauNumero, setNouveauNumero] = useState('')
+  const [enregistrementEnCours, setEnregistrementEnCours] = useState(false)
 
   const charger = async (q = '') => {
     setCharge(true)
@@ -44,7 +47,63 @@ export default function BureauCartes({ onAccesRefuse }) {
 
   useEffect(() => {
     charger()
+    api
+      .parametresPublics()
+      .then((data) => {
+        setNumeroTresorier(data.numero_wave_tresorier || '')
+        setNouveauNumero(data.numero_wave_tresorier || '')
+      })
+      .catch(() => {})
   }, [])
+
+  // Numéro du trésorier (Wave / Orange Money) : c'est à ce numéro que
+  // les membres envoient les 1 000 FCFA de leur carte. Il s'affiche sur
+  // la page publique « Ma carte de membre ». Si la trésorerie change, on
+  // retire ce numéro et on met celui du nouveau trésorier.
+  const enregistrerNumero = async (e) => {
+    e.preventDefault()
+    setErreur('')
+    setMessage('')
+    const numero = normaliserTelephone(nouveauNumero)
+    if (numero && numero.replace(/\D/g, '').length < 9) {
+      setErreur('Le numéro de téléphone semble incomplet. Vérifie-le et réessaie.')
+      return
+    }
+    setEnregistrementEnCours(true)
+    try {
+      await api.definirNumeroTresorier(numero)
+      setNumeroTresorier(numero)
+      setMessage('Numéro du trésorier enregistré. Il s’affiche sur la page « Ma carte de membre ».')
+    } catch (err) {
+      if (err.status === 401 && onAccesRefuse) {
+        onAccesRefuse()
+        return
+      }
+      setErreur(err.message || 'Une erreur est survenue.')
+    } finally {
+      setEnregistrementEnCours(false)
+    }
+  }
+
+  const retirerNumero = async () => {
+    setErreur('')
+    setMessage('')
+    setEnregistrementEnCours(true)
+    try {
+      await api.definirNumeroTresorier('')
+      setNumeroTresorier('')
+      setNouveauNumero('')
+      setMessage('Numéro du trésorier retiré. La page « Ma carte de membre » ne l’affiche plus.')
+    } catch (err) {
+      if (err.status === 401 && onAccesRefuse) {
+        onAccesRefuse()
+        return
+      }
+      setErreur(err.message || 'Une erreur est survenue.')
+    } finally {
+      setEnregistrementEnCours(false)
+    }
+  }
 
   const chercher = (e) => {
     const valeur = e.target.value
@@ -171,6 +230,41 @@ export default function BureauCartes({ onAccesRefuse }) {
 
       {message && <p className="message-ok">{message}</p>}
       {erreur && <p className="message-erreur">{erreur}</p>}
+
+      <h3 style={{ marginTop: 20 }}>Numéro du trésorier</h3>
+      <p className="aide">
+        C’est à ce numéro que les membres envoient les 1 000 FCFA de leur carte, par Wave ou Orange Money. Il
+        s’affiche sur la page publique « Ma carte de membre ». Si la trésorerie change, retire ce numéro et mets
+        celui du nouveau trésorier.
+      </p>
+      <form className="formulaire" onSubmit={enregistrerNumero}>
+        <div className="champ">
+          <label htmlFor="numero-tresorier-cartes">Numéro Wave / Orange Money du trésorier</label>
+          <input
+            id="numero-tresorier-cartes"
+            type="tel"
+            value={nouveauNumero}
+            onChange={(e) => setNouveauNumero(e.target.value)}
+            placeholder="Ex : 77 000 00 00"
+          />
+          {numeroTresorier && <p className="aide">Numéro enregistré : {numeroTresorier}</p>}
+        </div>
+        <div className="actions">
+          <button type="submit" className="bouton bouton-bleu" disabled={enregistrementEnCours}>
+            {enregistrementEnCours ? 'Enregistrement…' : 'Enregistrer le numéro'}
+          </button>
+          {numeroTresorier && (
+            <button
+              type="button"
+              className="bouton-discret bouton-danger"
+              onClick={retirerNumero}
+              disabled={enregistrementEnCours}
+            >
+              Retirer le numéro
+            </button>
+          )}
+        </div>
+      </form>
 
       <div className="stats">
         <div className="stat">

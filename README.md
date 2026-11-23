@@ -119,7 +119,15 @@ bouton bleu), puis le membre revient sur la page « Ma carte de membre », appui
 et télécharge sa carte en image PNG, avec son nom, son numéro et un QR code qui regroupe son nom et son
 numéro. Après avoir déclaré son paiement, le membre voit aussi un bouton « Récupérer ma carte » qui
 vérifie si le trésorier a validé : si oui, sa carte s'affiche tout de suite ; sinon, le site lui dit
-d'attendre encore. Ceux qui n'ont pas
+d'attendre encore.
+
+**Numéro du trésorier :** c'est à ce numéro (Wave / Orange Money) que les membres envoient les
+1 000 FCFA de leur carte. Le trésorier le met lui-même dans l'onglet « Cartes de membres » (section
+« Numéro du trésorier », en haut de l'onglet), et il s'affiche sur la page publique « Ma carte de
+membre ». Si la trésorerie change, le trésorier retire ce numéro (bouton « Retirer le numéro ») et met
+celui du nouveau trésorier. Le même numéro sert aussi pour les cotisations (onglet « Cotisations »,
+même champ et même bouton « Retirer le numéro ») et s'affiche sur la page publique des cotisations
+et des dons. Ceux qui n'ont pas
 encore demandé de carte n'apparaissent pas dans cet onglet (on les retrouve dans l'onglet Membres,
 filtre « Sans carte »).
 
