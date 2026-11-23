@@ -108,3 +108,39 @@ export function nonAutoriseCartes() {
     body: JSON.stringify({ error: 'Accès refusé. Entre le mot de passe des cartes de membres.' })
   }
 }
+
+// Mot de passe du budget, séparé du mot de passe du bureau.
+// Seuls le président et le trésorier le connaissent : il donne accès
+// seulement à l'onglet « Budget », pas au reste de l'espace bureau.
+// Il vient UNIQUEMENT de la variable d'environnement BUDGET_PASSWORD
+// (définie dans Netlify). Valeur par défaut : développement local
+// seulement. À CHANGER.
+export const MOT_DE_PASSE_BUDGET_DEFAUT = 'change-moi-budget'
+
+export function motDePasseBudget() {
+  return process.env.BUDGET_PASSWORD || MOT_DE_PASSE_BUDGET_DEFAUT
+}
+
+// Jeton budget : signature du mot de passe du budget.
+// Il voyage dans l'en-tête X-Jeton-Budget.
+export function creerJetonBudget() {
+  return crypto.createHmac('sha256', motDePasseBudget()).update('budget-aerd').digest('hex')
+}
+
+export function jetonBudgetValide(event) {
+  const jeton = (event.headers?.['x-jeton-budget'] || event.headers?.['X-Jeton-Budget'] || '').trim()
+  if (!jeton) return false
+  const attendu = creerJetonBudget()
+  const a = Buffer.from(jeton)
+  const b = Buffer.from(attendu)
+  if (a.length !== b.length) return false
+  return crypto.timingSafeEqual(a, b)
+}
+
+export function nonAutoriseBudget() {
+  return {
+    statusCode: 401,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ error: 'Accès refusé. Entre le mot de passe du budget.' })
+  }
+}

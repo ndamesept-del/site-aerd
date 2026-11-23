@@ -24,6 +24,7 @@ const CLE = 'aerd-local-v1'
 const MOT_DE_PASSE_DEV = 'change-moi'
 const MOT_DE_PASSE_DEV_CARAVANES = 'change-moi-caravanes'
 const MOT_DE_PASSE_DEV_CARTES = 'change-moi-cartes'
+const MOT_DE_PASSE_DEV_BUDGET = 'change-moi-budget'
 
 function etatVide() {
   return {
@@ -36,7 +37,8 @@ function etatVide() {
     dons_tickets: [],
     inscriptions_tickets: [],
     parametres: {},
-    seq: { membre: 1, chauffeur: 1, caravane: 1, inscription: 1, bureau: 1, cotisation: 1, don: 1, inscription_ticket: 1 }
+    depenses: [],
+    seq: { membre: 1, chauffeur: 1, caravane: 1, inscription: 1, bureau: 1, cotisation: 1, don: 1, inscription_ticket: 1, depense: 1 }
   }
 }
 
@@ -104,6 +106,18 @@ function jetonLocalCartes() {
 function exigerAuthCartes(opts) {
   if (!opts.jetonCartes || opts.jetonCartes !== jetonLocalCartes()) {
     const e = new Error('Accès refusé. Entre le mot de passe des cartes de membres.')
+    e.status = 401
+    throw e
+  }
+}
+
+function jetonLocalBudget() {
+  return hachageSimple(MOT_DE_PASSE_DEV_BUDGET + ':budget')
+}
+
+function exigerAuthBudget(opts) {
+  if (!opts.jetonBudget || opts.jetonBudget !== jetonLocalBudget()) {
+    const e = new Error('Accès refusé. Entre le mot de passe du budget.')
     e.status = 401
     throw e
   }
@@ -657,6 +671,65 @@ export const local = {
       etat.inscriptions_tickets.push(inscription)
       sauver(etat)
       return { inscription }
+    }
+
+    if (nom === 'budget-login') {
+      if (corps.password !== MOT_DE_PASSE_DEV_BUDGET) erreur('Mot de passe incorrect.')
+      return { token: jetonLocalBudget() }
+    }
+
+    // Budget (président et trésorier seulement) : les entrées sont
+    // calculées toutes seules, les dépenses sont saisies par le bureau.
+    if (nom === 'budget') {
+      exigerAuthBudget(opts)
+      if ((opts.methode || 'GET') === 'GET') {
+        const cotisations = etat.cotisations
+          .filter((c) => c.statut === 'paye')
+          .reduce((s, c) => s + Number(c.montant_fcfa || 0), 0)
+        const cartes = etat.membres.filter((m) => m.carte_payee).length * 1000
+        const caravanes = etat.inscriptions
+          .filter((i) => i.statut === 'payé')
+          .reduce((s, i) => {
+            const c = etat.caravanes.find((x) => x.id === i.caravane_id)
+            return s + Number(c?.montant_fcfa || 0)
+          }, 0)
+        const entrees = { cotisations, cartes, caravanes, total: cotisations + cartes + caravanes }
+        const depenses = [...etat.depenses].sort((a, b) =>
+          b.date_depense.localeCompare(a.date_depense) || b.id - a.id
+        )
+        const totalDepenses = depenses.reduce((s, d) => s + Number(d.montant_fcfa || 0), 0)
+        return {
+          entrees,
+          depenses: depenses.map((d) => ({
+            id: d.id, date: d.date_depense, libelle: d.libelle, categorie: d.categorie, montant_fcfa: Number(d.montant_fcfa)
+          })),
+          total_depenses: totalDepenses,
+          solde: entrees.total - totalDepenses
+        }
+      }
+      if (corps.action === 'ajouter') {
+        const date = nettoyerTexte(corps.date)
+        const libelle = nettoyerTexte(corps.libelle)
+        const montant = Number(corps.montant_fcfa)
+        let categorie = nettoyerTexte(corps.categorie) || 'Autre'
+        const categories = ['Carburant', 'Chauffeur', 'Aide sociale', 'Impression', 'Événement', 'Autre']
+        if (!categories.includes(categorie)) categorie = 'Autre'
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) erreur('Date invalide. Utilise le format AAAA-MM-JJ.')
+        if (!libelle || libelle.length > 120) erreur('Le motif de la dépense est obligatoire (120 caractères au maximum).')
+        if (!Number.isInteger(montant) || montant <= 0) erreur('Le montant doit être un nombre entier supérieur à 0.')
+        const depense = { id: etat.seq.depense++, date_depense: date, libelle, categorie, montant_fcfa: montant }
+        etat.depenses.push(depense)
+        sauver(etat)
+        return { depense: { id: depense.id, date: depense.date_depense, libelle, categorie, montant_fcfa: montant } }
+      }
+      if (corps.action === 'supprimer') {
+        const index = etat.depenses.findIndex((d) => d.id === Number(corps.id))
+        if (index < 0) erreur('Dépense introuvable.')
+        etat.depenses.splice(index, 1)
+        sauver(etat)
+        return { supprime: true }
+      }
+      erreur('Action inconnue.')
     }
 
     if (nom === 'parametres') {

@@ -55,7 +55,20 @@ export function estConnecteCartes() {
   return !!getTokenCartes()
 }
 
-async function appelFonction(nom, { methode = 'GET', corps = null, auth = false, params = null, caravanes = false, cartes = false } = {}) {
+function getTokenBudget() {
+  return localStorage.getItem('aerd-budget-token') || ''
+}
+
+export function setTokenBudget(jeton) {
+  if (jeton) localStorage.setItem('aerd-budget-token', jeton)
+  else localStorage.removeItem('aerd-budget-token')
+}
+
+export function estConnecteBudget() {
+  return !!getTokenBudget()
+}
+
+async function appelFonction(nom, { methode = 'GET', corps = null, auth = false, params = null, caravanes = false, cartes = false, budget = false } = {}) {
   let url = FN + '/' + nom
   if (params) {
     const qs = new URLSearchParams(params)
@@ -65,6 +78,7 @@ async function appelFonction(nom, { methode = 'GET', corps = null, auth = false,
   if (auth && getToken()) options.headers.Authorization = 'Bearer ' + getToken()
   if (caravanes && getTokenCaravanes()) options.headers['X-Jeton-Caravanes'] = getTokenCaravanes()
   if (cartes && getTokenCartes()) options.headers['X-Jeton-Cartes'] = getTokenCartes()
+  if (budget && getTokenBudget()) options.headers['X-Jeton-Budget'] = getTokenBudget()
   if (corps) options.body = JSON.stringify(corps)
   const res = await fetch(url, options)
   const texte = await res.text()
@@ -87,7 +101,7 @@ async function appelFonction(nom, { methode = 'GET', corps = null, auth = false,
 
 async function appel(nom, opts = {}) {
   if (modeLocal)
-    return local.appel(nom, { ...opts, token: getToken(), jetonCaravanes: getTokenCaravanes(), jetonCartes: getTokenCartes() })
+    return local.appel(nom, { ...opts, token: getToken(), jetonCaravanes: getTokenCaravanes(), jetonCartes: getTokenCartes(), jetonBudget: getTokenBudget() })
   if (!import.meta.env.DEV) return appelFonction(nom, opts)
   try {
     return await appelFonction(nom, opts)
@@ -96,7 +110,7 @@ async function appel(nom, opts = {}) {
     if (e.status === 404 || e.status === 405 || /fetch|JSON|Unexpected token/i.test(e.message)) {
       modeLocal = true
       window.dispatchEvent(new Event('aerd-mode-local'))
-      return local.appel(nom, { ...opts, token: getToken(), jetonCaravanes: getTokenCaravanes(), jetonCartes: getTokenCartes() })
+      return local.appel(nom, { ...opts, token: getToken(), jetonCaravanes: getTokenCaravanes(), jetonCartes: getTokenCartes(), jetonBudget: getTokenBudget() })
     }
     throw e
   }
@@ -158,6 +172,14 @@ export const api = {
     appel('inscriptions_tickets', { methode: 'POST', corps: { action: 'attribuer', id }, auth: true }),
   refuserTicket: (id) =>
     appel('inscriptions_tickets', { methode: 'POST', corps: { action: 'refuser', id }, auth: true }),
+  // Budget (connexion séparée, président et trésorier seulement)
+  budgetLogin: (password) => appel('budget-login', { methode: 'POST', corps: { password } }),
+  budget: () => appel('budget', { budget: true }),
+  ajouterDepense: (donnees) =>
+    appel('budget', { methode: 'POST', corps: { action: 'ajouter', ...donnees }, budget: true }),
+  supprimerDepense: (id) =>
+    appel('budget', { methode: 'POST', corps: { action: 'supprimer', id }, budget: true }),
+
   parametresPublics: () => appel('parametres'),
   definirNumeroTresorier: (numero_wave_tresorier) =>
     appel('parametres', { methode: 'POST', corps: { numero_wave_tresorier }, auth: true }),

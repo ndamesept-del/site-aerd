@@ -241,6 +241,7 @@ Il vient de la variable d’environnement `BUREAU_PASSWORD`.
   - `BUREAU_PASSWORD` : ton mot de passe (fort, connu du bureau seulement)
   - `CARAVANES_PASSWORD` : mot de passe de l’onglet Caravanes, connu de l’administrateur seulement
   - `CARTES_PASSWORD` : mot de passe de l’onglet Cartes de membres, connu du trésorier seulement
+  - `BUDGET_PASSWORD` : mot de passe de l’onglet Budget, connu du président et du trésorier seulement
   - `DATABASE_URL` : l’adresse de ta base PostgreSQL (donnée par Neon)
 
 Pour changer le mot de passe plus tard : change la variable dans Netlify,
@@ -256,6 +257,22 @@ aussi son propre mot de passe (`CARTES_PASSWORD`), séparé de celui du
 bureau. Seul le trésorier le connaît : il donne accès seulement à
 cette partie (voir les cartes, valider un paiement de carte), pas au
 reste de l’espace bureau.
+
+**Mot de passe du budget :** l’onglet Budget a lui aussi son propre mot de passe
+(`BUDGET_PASSWORD`), séparé de celui du bureau. Seuls le président et le
+trésorier le connaissent : il donne accès seulement à cette partie (voir le
+budget, ajouter ou supprimer une dépense), pas au reste de l’espace bureau.
+Le budget n’apparaît sur aucune page publique.
+
+**Budget de l’amicale :** l’onglet « Budget » montre l’argent de l’amicale.
+Les entrées sont calculées toutes seules : cotisations payées (500 FCFA),
+cartes de membres payées (1 000 FCFA), places de caravane payées (montant
+affiché de la caravane). Les sorties, c’est le bureau qui les note : date,
+motif, catégorie (Carburant, Chauffeur, Aide sociale, Impression, Événement,
+Autre) et montant. Le solde (entrées moins sorties) est affiché en haut.
+Pour que l’onglet marche sur le vrai site, il faut créer la table `depenses`
+dans la base (voir `schema.sql`) et définir `BUDGET_PASSWORD` dans Netlify
+avant de déployer : le mot de passe devient actif avec ce déploiement.
 
 **Réduction sur la place de caravane (pour motiver) :** ce n'est pas une
 subvention d'ailleurs, c'est une remise sur le paiement de la caravane.
@@ -277,7 +294,7 @@ vérification.
    - Functions directory : `netlify/functions`
    (Ces réglages sont déjà dans le fichier `netlify.toml`, Netlify les reprend tout seul.)
 4. Avant de déployer, ajoute les variables d’environnement (étape 4) :
-   `DATABASE_URL`, `BUREAU_PASSWORD`, `CARAVANES_PASSWORD` et `CARTES_PASSWORD`.
+   `DATABASE_URL`, `BUREAU_PASSWORD`, `CARAVANES_PASSWORD`, `CARTES_PASSWORD` et `BUDGET_PASSWORD`.
 5. Clique sur « Deploy ». Netlify te donne une adresse, par exemple
    `https://aerd-uam.netlify.com`.
 6. Dans la console SQL de ta base, vérifie que les tables existent

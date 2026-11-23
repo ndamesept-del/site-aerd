@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { api, setToken, estConnecte, setTokenCaravanes, estConnecteCaravanes, setTokenCartes, estConnecteCartes } from '../api.js'
+import { api, setToken, estConnecte, setTokenCaravanes, estConnecteCaravanes, setTokenCartes, estConnecteCartes, setTokenBudget, estConnecteBudget } from '../api.js'
 import BureauDashboard from './BureauDashboard.jsx'
 import BureauMembres from './BureauMembres.jsx'
 import BureauCartes from './BureauCartes.jsx'
@@ -8,6 +8,7 @@ import BureauCaravanes from './BureauCaravanes.jsx'
 import BureauOrganigramme from './BureauOrganigramme.jsx'
 import BureauCotisations from './BureauCotisations.jsx'
 import BureauDons from './BureauDons.jsx'
+import BureauBudget from './BureauBudget.jsx'
 
 function PageConnexion({ onConnecte }) {
   const [password, setPassword] = useState('')
@@ -147,11 +148,57 @@ function PageConnexionCartes({ onConnecte }) {
   )
 }
 
+function PageConnexionBudget({ onConnecte }) {
+  const [password, setPassword] = useState('')
+  const [envoi, setEnvoi] = useState(false)
+  const [erreur, setErreur] = useState('')
+
+  const envoyer = async (e) => {
+    e.preventDefault()
+    setErreur('')
+    setEnvoi(true)
+    try {
+      const data = await api.budgetLogin(password)
+      setTokenBudget(data.token)
+      onConnecte()
+    } catch {
+      setErreur('Mot de passe incorrect. Réessaie.')
+    } finally {
+      setEnvoi(false)
+    }
+  }
+
+  return (
+    <div>
+      <h3>Budget, accès protégé</h3>
+      <p>Seuls le président et le trésorier connaissent ce mot de passe. Sans lui, on ne peut ni voir le budget de l’amicale, ni ajouter une dépense.</p>
+      <form onSubmit={envoyer}>
+        {erreur && <p className="message-erreur">{erreur}</p>}
+        <div className="champ">
+          <label htmlFor="mot-de-passe-budget">Mot de passe du budget</label>
+          <input
+            id="mot-de-passe-budget"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            required
+          />
+        </div>
+        <button type="submit" className="bouton bouton-bleu bouton-plein" disabled={envoi}>
+          {envoi ? 'Vérification…' : 'Ouvrir l’onglet Budget'}
+        </button>
+      </form>
+    </div>
+  )
+}
+
 export default function Bureau({ aller }) {
   const [connecte, setConnecte] = useState(estConnecte())
   const [caravanesConnecte, setCaravanesConnecte] = useState(estConnecteCaravanes())
   const [cartesConnecte, setCartesConnecte] = useState(estConnecteCartes())
-  const [onglet, setOnglet] = useState('tableau') // tableau | membres | cartes | chauffeurs | caravanes | bureau | cotisations | dons
+  const [budgetConnecte, setBudgetConnecte] = useState(estConnecteBudget())
+  const [onglet, setOnglet] = useState('tableau') // tableau | membres | cartes | chauffeurs | caravanes | bureau | cotisations | dons | budget
 
   const quitter = () => {
     setToken(null)
@@ -159,6 +206,8 @@ export default function Bureau({ aller }) {
     setCaravanesConnecte(false)
     setTokenCartes(null)
     setCartesConnecte(false)
+    setTokenBudget(null)
+    setBudgetConnecte(false)
     setConnecte(false)
     aller('accueil')
   }
@@ -181,6 +230,13 @@ export default function Bureau({ aller }) {
   const quitterCartes = () => {
     setTokenCartes(null)
     setCartesConnecte(false)
+  }
+
+  // Jeton du budget périmé (mot de passe changé) : on efface le jeton
+  // et on montre de nouveau le formulaire du mot de passe.
+  const quitterBudget = () => {
+    setTokenBudget(null)
+    setBudgetConnecte(false)
   }
 
   if (!connecte) {
@@ -247,6 +303,13 @@ export default function Bureau({ aller }) {
           >
             Dons de tickets
           </button>
+          <button
+            type="button"
+            className={onglet === 'budget' ? 'actif' : ''}
+            onClick={() => setOnglet('budget')}
+          >
+            Budget
+          </button>
         </div>
 
         {onglet === 'tableau' && <BureauDashboard allerOnglet={setOnglet} onDeconnecte={quitterBureau} />}
@@ -267,6 +330,12 @@ export default function Bureau({ aller }) {
         {onglet === 'bureau' && <BureauOrganigramme />}
         {onglet === 'cotisations' && <BureauCotisations />}
         {onglet === 'dons' && <BureauDons />}
+        {onglet === 'budget' &&
+          (budgetConnecte ? (
+            <BureauBudget onAccesRefuse={quitterBudget} />
+          ) : (
+            <PageConnexionBudget onConnecte={() => setBudgetConnecte(true)} />
+          ))}
       </section>
     </div>
   )

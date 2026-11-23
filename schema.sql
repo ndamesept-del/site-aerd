@@ -232,6 +232,22 @@ CREATE INDEX IF NOT EXISTS inscriptions_tickets_don_idx ON inscriptions_tickets 
 -- Petits réglages du site, une ligne par réglage. Pour l'instant,
 -- une seule ligne : le numéro Wave / Orange Money du trésorier,
 -- pour payer les cotisations (clé « numero_wave_tresorier »).
+-- Dépenses de l'amicale (budget) : le président et le trésorier
+-- notent chaque sortie d'argent (date, motif, catégorie, montant).
+-- Les entrées (cotisations, cartes, caravanes) sont calculées toutes
+-- seules à partir des autres tables, pas besoin de les saisir.
+CREATE TABLE IF NOT EXISTS depenses (
+  id SERIAL PRIMARY KEY,
+  date_depense DATE NOT NULL,
+  libelle TEXT NOT NULL,
+  categorie TEXT NOT NULL DEFAULT 'Autre'
+    CHECK (categorie IN ('Carburant', 'Chauffeur', 'Aide sociale', 'Impression', 'Événement', 'Autre')),
+  montant_fcfa INTEGER NOT NULL CHECK (montant_fcfa > 0),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS depenses_date_idx ON depenses (date_depense);
+
 CREATE TABLE IF NOT EXISTS parametres (
   cle TEXT PRIMARY KEY,
   valeur TEXT NOT NULL
