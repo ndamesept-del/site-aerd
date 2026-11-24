@@ -65,7 +65,7 @@ export default function App() {
 
   return (
     <div>
-      <header className="entete">
+      <header className={page === 'bureau' ? 'entete entete-bureau' : 'entete'}>
         <div className="conteneur entete-contenu">
           <a
             className="marque"

@@ -152,6 +152,14 @@ p {
   z-index: 20;
 }
 
+/* Dans l'espace bureau, l'en-tête du site n'est pas fixe : il défile avec
+   la page. Comme ça, le menu du bureau (les onglets) reste seul en haut de
+   l'écran quand on défile, sans être coupé en deux par l'en-tête. Sur les
+   autres pages, l'en-tête reste fixe comme avant. */
+.entete-bureau {
+  position: static;
+}
+
 .entete .entete-contenu {
   display: flex;
   flex-wrap: wrap;
@@ -1403,9 +1411,18 @@ p {
   flex-wrap: nowrap;
   overflow-x: auto;
   margin: 18px -20px 24px;
-  padding: 0 20px 6px;
+  padding: 10px 20px 12px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  /* Menu fixe : il reste en haut de l'écran quand on défile la liste,
+     pour naviguer d'un onglet à l'autre sans remonter. Il passe au-dessus
+     de l'en-tête du site (z-index 20) et son fond cache le contenu qui
+     défile dessous. */
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  background: var(--fond);
+  border-bottom: 1px solid var(--bordure);
 }
 
 .onglets-bureau::-webkit-scrollbar {
